@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workshop: Agentes no Databricks — Saúde</title>
+<style>
+  :root{
+    --bg:#0b1020; --card:#141b30; --ink:#eef2ff; --muted:#9aa7c7;
+    --accent:#ff5f46; --accent2:#4f9cff; --ok:#39d98a; --line:#26304d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+    background:var(--bg);color:var(--ink);overflow:hidden;
+  }
+  .slide{
+    position:absolute;inset:0;display:none;flex-direction:column;
+    justify-content:center;padding:6vh 9vw;animation:fade .4s ease;
+  }
+  .slide.active{display:flex}
+  @keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  h1{font-size:3.2rem;line-height:1.08;margin-bottom:1.2rem}
+  h2{font-size:2.2rem;margin-bottom:1.4rem;color:var(--accent2)}
+  h3{font-size:1.25rem;color:var(--accent);margin:.6rem 0}
+  p,li{font-size:1.25rem;line-height:1.6;color:var(--ink)}
+  .muted{color:var(--muted)}
+  .tag{display:inline-block;background:var(--accent);color:#fff;
+    padding:.3rem .9rem;border-radius:999px;font-size:.95rem;font-weight:600;margin-bottom:1.4rem}
+  ul{margin-left:1.4rem;margin-top:.6rem}
+  li{margin:.5rem 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.2rem;margin-top:1.5rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.3rem}
+  .card h3{margin-top:0}
+  .card p{font-size:1.05rem;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;margin-top:1.2rem;font-size:1.05rem}
+  th,td{text-align:left;padding:.7rem .9rem;border-bottom:1px solid var(--line)}
+  th{color:var(--accent2)}
+  td.min{color:var(--ok);font-weight:600;white-space:nowrap}
+  .nav{position:fixed;bottom:18px;right:24px;display:flex;gap:10px;align-items:center;z-index:10}
+  .nav button{background:var(--card);color:var(--ink);border:1px solid var(--line);
+    border-radius:10px;padding:.5rem .9rem;font-size:1rem;cursor:pointer}
+  .nav button:hover{border-color:var(--accent2)}
+  .counter{position:fixed;bottom:22px;left:24px;color:var(--muted);font-size:.95rem;z-index:10}
+  .bar{position:fixed;top:0;left:0;height:4px;background:var(--accent);z-index:10;transition:width .3s}
+  .lead{font-size:1.5rem;color:var(--muted);max-width:60ch}
+  .kicker{color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:1rem;margin-bottom:.6rem}
+  .pill{display:inline-block;background:#1d2742;border:1px solid var(--line);border-radius:8px;
+    padding:.2rem .7rem;font-size:.95rem;color:var(--muted);margin:.2rem .3rem .2rem 0}
+  code{background:#1d2742;padding:.15rem .45rem;border-radius:6px;font-size:1.05rem;color:#ffd7cc}
+  .center{align-items:center;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="bar" id="bar"></div>
+
+<!-- 1 · Capa -->
+<section class="slide active center">
+  <div class="tag">Workshop L200 · Dia inteiro</div>
+  <h1>Agentes de IA no Databricks</h1>
+  <p class="lead">Do no-code à produção — construindo agentes sobre um domínio de saúde
+  (beneficiários, planos, coberturas e sinistros).</p>
+  <p class="muted" style="margin-top:2rem">Dados 100% sintéticos · Material em português</p>
+</section>
+
+<!-- 2 · Agenda -->
+<section class="slide">
+  <div class="kicker">Como será o dia</div>
+  <h2>Agenda</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Manhã · Fundamentos & no-code</h3>
+      <p>Panorama de agentes · Setup e dados · Genie Space · Knowledge Assistant ·
+      no-code vs. código</p>
+    </div>
+    <div class="card">
+      <h3>Tarde · Código & produção</h3>
+      <p>Agente com SDK + tools · Multi-Agent Supervisor · Avaliação e governança ·
+      Capstone</p>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:1.4rem">~3h manhã + ~3h tarde · 8 notebooks hands-on</p>
+</section>
+
+<!-- 3 · Por que agentes -->
+<section class="slide">
+  <div class="kicker">Contexto</div>
+  <h2>Por que agentes?</h2>
+  <p class="lead">Um LLM sozinho responde texto. Um <strong>agente</strong> raciocina,
+  usa ferramentas, consulta dados e age — com governança.</p>
+  <div class="grid">
+    <div class="card"><h3>Raciocina</h3><p>Decide os passos para resolver uma tarefa.</p></div>
+    <div class="card"><h3>Usa ferramentas</h3><p>SQL, funções, busca, APIs.</p></div>
+    <div class="card"><h3>Consulta dados</h3><p>Governados pelo Unity Catalog.</p></div>
+    <div class="card"><h3>É avaliável</h3><p>Qualidade medida e monitorada.</p></div>
+  </div>
+</section>
+
+<!-- 4 · Arquitetura -->
+<section class="slide">
+  <div class="kicker">Plataforma</div>
+  <h2>Agentes no Databricks — o mapa</h2>
+  <div class="grid">
+    <div class="card"><h3>Agent Bricks</h3><p>Genie, Knowledge Assistant e Multi-Agent
+      Supervisor — no-code / low-code.</p></div>
+    <div class="card"><h3>Mosaic AI Agent Framework</h3><p>Agentes com código
+      (ResponsesAgent), tools, deploy em Model Serving.</p></div>
+    <div class="card"><h3>Foundation Model APIs</h3><p>LLMs prontos (Llama, Claude, GTE)
+      servidos pelo Databricks.</p></div>
+    <div class="card"><h3>Vector Search</h3><p>RAG gerenciado com embeddings automáticos.</p></div>
+    <div class="card"><h3>Unity Catalog</h3><p>Governança: dados, funções, modelos, lineage.</p></div>
+    <div class="card"><h3>MLflow 3</h3><p>Tracing, evaluation, monitors de produção.</p></div>
+  </div>
+</section>
+
+<!-- 5 · Domínio -->
+<section class="slide">
+  <div class="kicker">Nosso caso</div>
+  <h2>Domínio: operadora de saúde</h2>
+  <p class="lead">Tudo que construirmos gira em torno de dados sintéticos de uma operadora
+  de plano de saúde.</p>
+  <div style="margin-top:1rem">
+    <span class="pill">beneficiarios</span>
+    <span class="pill">planos</span>
+    <span class="pill">hospitais</span>
+    <span class="pill">procedimentos</span>
+    <span class="pill">sinistros</span>
+  </div>
+  <p class="muted" style="margin-top:1rem">+ documentos: manual de cobertura, regras de
+  carência, política de reembolso, rol de procedimentos, FAQ.</p>
+</section>
+
+<!-- 6 · Genie -->
+<section class="slide">
+  <div class="kicker">Bloco 2 · notebook 02</div>
+  <h2>Genie Space — linguagem natural → SQL</h2>
+  <p class="lead">Perguntas de negócio respondidas em SQL, sem escrever código.</p>
+  <ul>
+    <li>"Qual a taxa de negativa de sinistros por plano?"</li>
+    <li>"Quais motivos de negativa são mais comuns?"</li>
+    <li>"Qual hospital tem maior valor aprovado?"</li>
+  </ul>
+  <p class="muted" style="margin-top:1rem">Boas práticas: comentários de tabela, exemplos
+  de SQL, instruções de negócio. Consumível também via <code>Conversation API</code>.</p>
+</section>
+
+<!-- 7 · KA -->
+<section class="slide">
+  <div class="kicker">Bloco 3 · notebook 03</div>
+  <h2>Knowledge Assistant — RAG sobre documentos</h2>
+  <p class="lead">Q&A sobre manuais de cobertura, carência e reembolso — com citação das
+  fontes.</p>
+  <ul>
+    <li>Ingestão, chunking, embeddings e indexação <strong>automáticos</strong>.</li>
+    <li>"Qual a carência para ressonância?" · "Posso usar hospital fora da rede?"</li>
+    <li>Exposto como serving endpoint — plugável em apps e no supervisor.</li>
+  </ul>
+</section>
+
+<!-- 8 · no-code vs código -->
+<section class="slide">
+  <div class="kicker">Bloco 4</div>
+  <h2>Quando usar no-code vs. código?</h2>
+  <table>
+    <tr><th>Situação</th><th>Escolha</th></tr>
+    <tr><td>Self-service de dados (NL→SQL)</td><td class="min">Genie</td></tr>
+    <tr><td>Q&A sobre documentos, rápido</td><td class="min">Knowledge Assistant</td></tr>
+    <tr><td>Orquestrar vários agentes</td><td class="min">Multi-Agent Supervisor</td></tr>
+    <tr><td>Lógica custom, tools próprias, RAG fino</td><td class="min">Agente com código</td></tr>
+    <tr><td>Precisa de controle total do pipeline</td><td class="min">Agent Framework</td></tr>
+  </table>
+</section>
+
+<!-- 9 · Agente com código -->
+<section class="slide">
+  <div class="kicker">Bloco 5 · notebook 04</div>
+  <h2>Agente com código — o padrão de produção</h2>
+  <div class="grid">
+    <div class="card"><h3>1 · Tools</h3><p>UC Functions governadas (SQL/Python).</p></div>
+    <div class="card"><h3>2 · RAG</h3><p>Índice de Vector Search sobre os documentos.</p></div>
+    <div class="card"><h3>3 · Agente</h3><p><code>ResponsesAgent</code> do MLflow com loop
+      de ferramentas.</p></div>
+    <div class="card"><h3>4 · Deploy</h3><p><code>agents.deploy</code> → endpoint + Review
+      App + inference table.</p></div>
+  </div>
+</section>
+
+<!-- 10 · MAS -->
+<section class="slide">
+  <div class="kicker">Bloco 6 · notebook 05</div>
+  <h2>Multi-Agent Supervisor</h2>
+  <p class="lead">Um supervisor roteia a pergunta para o agente certo e sintetiza a
+  resposta.</p>
+  <div class="grid">
+    <div class="card"><h3>Genie</h3><p>Números e estatísticas.</p></div>
+    <div class="card"><h3>Knowledge Assistant</h3><p>Regras e cobertura.</p></div>
+    <div class="card"><h3>Agente de código</h3><p>Dados do beneficiário + RAG.</p></div>
+  </div>
+  <p class="muted" style="margin-top:1rem">Duas formas: MAS no-code (Agent Bricks) ou
+  supervisor com código.</p>
+</section>
+
+<!-- 11 · Avaliação -->
+<section class="slide">
+  <div class="kicker">Bloco 7 · notebook 06</div>
+  <h2>Avaliação e governança</h2>
+  <ul>
+    <li><strong>Tracing</strong> — cada passo do agente (LLM, tools, latência).</li>
+    <li><strong>Datasets + scorers</strong> — Correctness, Safety, RelevanceToQuery,
+      diretrizes de negócio.</li>
+    <li><strong><code>mlflow.genai.evaluate</code></strong> — compara versões lado a lado.</li>
+    <li><strong>Monitors</strong> — qualidade contínua sobre o tráfego de produção.</li>
+    <li><strong>Unity Catalog</strong> — lineage, permissões, auditoria fim-a-fim.</li>
+  </ul>
+</section>
+
+<!-- 12 · Capstone -->
+<section class="slide">
+  <div class="kicker">Bloco 8 · notebook 07</div>
+  <h2>Capstone — agente de atendimento</h2>
+  <p class="lead">Junte tudo: explique por que um sinistro foi negado, cite a carência
+  correta e proponha o próximo passo.</p>
+  <ul>
+    <li>Reaproveite o agente com código e suas tools.</li>
+    <li>Adicione uma nova ferramenta (simulação de reembolso).</li>
+    <li>Melhore o prompt e <strong>re-avalie</strong> — mostre a melhora.</li>
+  </ul>
+</section>
+
+<!-- 13 · Encerramento -->
+<section class="slide center">
+  <div class="tag">Obrigada!</div>
+  <h1>Próximos passos</h1>
+  <p class="lead">Leve para seus dados · adicione tools · conecte a uma Databricks App ·
+  configure monitors de produção.</p>
+  <p class="muted" style="margin-top:2rem">Dúvidas? Vamos ao hands-on. 🚀</p>
+</section>
+
+<div class="counter"><span id="cur">1</span> / <span id="tot">13</span></div>
+<div class="nav">
+  <button onclick="go(-1)">← Anterior</button>
+  <button onclick="go(1)">Próximo →</button>
+</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  let i=0; const tot=slides.length;
+  document.getElementById('tot').textContent=tot;
+  function render(){
+    slides.forEach((s,n)=>s.classList.toggle('active',n===i));
+    document.getElementById('cur').textContent=i+1;
+    document.getElementById('bar').style.width=((i+1)/tot*100)+'%';
+  }
+  function go(d){i=Math.min(tot-1,Math.max(0,i+d));render();}
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' ')go(1);
+    if(e.key==='ArrowLeft')go(-1);
+  });
+  render();
+</script>
+</body>
+</html>
