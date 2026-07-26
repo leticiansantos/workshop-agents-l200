@@ -149,11 +149,19 @@ print("\nSQL gerado:\n", sql)
 
 # COMMAND ----------
 
+# Helper: extrai o texto de resposta procurando entre TODOS os attachments.
+# (o primeiro attachment pode ser uma query/SQL, cujo .text é None)
+def texto_da_conversa(msg) -> str:
+    for att in (msg.attachments or []):
+        if att.text and att.text.content:
+            return att.text.content
+    return "sem texto"
+
 # Exemplo de follow-up usando a mesma conversa:
 conversa = w.genie.start_conversation_and_wait(
     GENIE_SPACE_ID, "Quais são os 5 hospitais com maior valor aprovado?"
 )
-print(conversa.attachments[0].text.content if conversa.attachments else "sem texto")
+print(texto_da_conversa(conversa))
 
 follow = w.genie.create_message_and_wait(
     GENIE_SPACE_ID, conversa.conversation_id,
@@ -161,7 +169,7 @@ follow = w.genie.create_message_and_wait(
 )
 print("\nFollow-up:")
 for att in (follow.attachments or []):
-    if att.text:
+    if att.text and att.text.content:
         print(att.text.content)
     if att.query:
         print("SQL:", att.query.query)

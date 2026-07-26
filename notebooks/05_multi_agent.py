@@ -13,6 +13,18 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## 0. Bibliotecas
+# MAGIC Cada notebook roda numa sessão própria. Instalamos MLflow + LangChain (usado pelo
+# MAGIC `mlflow.langchain.autolog()`) e o SDK.
+
+# COMMAND ----------
+
+# MAGIC %pip install -U -qqq "mlflow[databricks]>=3.1" databricks-langchain langchain-core databricks-sdk
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # ── Isolamento por usuário (ambiente compartilhado) ────────────────────────────
 import re
 
@@ -97,12 +109,21 @@ def rotear(pergunta: str) -> str:
 @mlflow.trace(name="chamar_genie")
 def chamar_genie(pergunta):
     conv = w.genie.start_conversation_and_wait(GENIE_SPACE_ID, pergunta)
-    return conv.attachments[0].text.content if conv.attachments else "(sem resposta)"
+    # O primeiro attachment pode ser SQL (text=None); procuramos o texto entre todos.
+    for att in (conv.attachments or []):
+        if att.text and att.text.content:
+            return att.text.content
+    return "(sem resposta)"
 
 @mlflow.trace(name="chamar_endpoint")
 def chamar_endpoint(endpoint, pergunta):
-    r = client.predict(endpoint=endpoint,
-                       inputs={"messages": [{"role": "user", "content": pergunta}]})
+    # KA e agente de código são ResponsesAgent → payload usa "input".
+    # Tentamos o formato Responses e caímos para chat se o endpoint exigir "messages".
+    msg = {"role": "user", "content": pergunta}
+    try:
+        r = client.predict(endpoint=endpoint, inputs={"input": [msg]})
+    except Exception:
+        r = client.predict(endpoint=endpoint, inputs={"messages": [msg]})
     # Cobre formatos chat e responses.
     if "choices" in r:
         return r["choices"][0]["message"]["content"]

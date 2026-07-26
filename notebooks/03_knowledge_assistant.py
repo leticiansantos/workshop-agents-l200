@@ -89,10 +89,12 @@ assert KA_ENDPOINT, "Informe o nome do serving endpoint do Knowledge Assistant."
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client("databricks")
 
+# O Knowledge Assistant é servido como um ResponsesAgent — o payload usa a chave
+# "input" (formato Responses), não "messages" (formato chat).
 resposta = client.predict(
     endpoint=KA_ENDPOINT,
     inputs={
-        "messages": [
+        "input": [
             {"role": "user", "content": "Qual a carência para cirurgias e internações?"}
         ]
     },

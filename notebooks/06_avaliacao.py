@@ -38,7 +38,7 @@ AGENTE_ENDPOINT = dbutils.widgets.get("agente_endpoint")
 
 # COMMAND ----------
 
-import re, sys, importlib
+import os, re, sys, importlib
 import mlflow
 from mlflow.types.responses import ResponsesAgentRequest
 
@@ -46,8 +46,20 @@ from mlflow.types.responses import ResponsesAgentRequest
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
 
-AGENT_DIR = f"/tmp/workshop_agentes/{USER_SLUG}"
+CATALOGO = dbutils.widgets.get("catalogo")
+SCHEMA = f"saude_{USER_SLUG}"
+
+# O agente foi gerado no notebook 04 e gravado num volume persistente do UC — importamos
+# de lá (sobrevive a reinício de cluster, acessível entre sessões).
+AGENT_DIR = f"/Volumes/{CATALOGO}/{SCHEMA}/assets"
 AGENT_MODULE = f"agente_saude_{USER_SLUG}"
+AGENT_FILE = f"{AGENT_DIR}/{AGENT_MODULE}.py"
+
+assert os.path.exists(AGENT_FILE), (
+    f"Arquivo do agente não encontrado em {AGENT_FILE}. "
+    "Rode o notebook 04 (seção 4) primeiro para gerar o agente."
+)
+
 if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 AGENT = importlib.import_module(AGENT_MODULE).AGENT

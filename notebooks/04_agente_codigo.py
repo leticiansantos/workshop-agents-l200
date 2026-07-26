@@ -13,6 +13,18 @@
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC ## 0. Bibliotecas
+# MAGIC Cada notebook roda numa sessão própria — instalamos aqui as libs de Vector Search,
+# MAGIC agentes e LangChain usadas ao longo do notebook.
+
+# COMMAND ----------
+
+# MAGIC %pip install -U -qqq databricks-vectorsearch databricks-agents databricks-langchain langchain-core "mlflow[databricks]>=3.1"
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # ── Isolamento por usuário (ambiente compartilhado) ────────────────────────────
 # O endpoint de Vector Search é COMPARTILHADO (recurso caro, multiusuário). Todo o
 # resto — índice, funções, modelo e deploy — fica no seu schema/nome exclusivo.
@@ -98,23 +110,38 @@ print(f"✅ {df_docs.count()} documentos materializados em doc_cobertura")
 
 # COMMAND ----------
 
+import re
 from databricks.vector_search.client import VectorSearchClient
+
+# Recalcula a identidade caso a célula seja executada isoladamente (evita NameError).
+CATALOGO = dbutils.widgets.get("catalogo")
+_usuario = spark.sql("SELECT current_user()").collect()[0][0]
+USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
+SCHEMA = f"saude_{USER_SLUG}"
+VS_ENDPOINT = "workshop_vs_endpoint"                    # COMPARTILHADO entre todos
+VS_INDEX = f"{CATALOGO}.{SCHEMA}.doc_cobertura_index"   # exclusivo (seu schema)
 
 vsc = VectorSearchClient(disable_notice=True)
 
-# Endpoint (reutiliza se já existir).
-try:
+# Endpoint COMPARTILHADO: normalmente já existe (criado por outro participante).
+# Só tratamos o caso "já existe"; outros erros devem aparecer.
+endpoints_existentes = [e["name"] for e in (vsc.list_endpoints().get("endpoints") or [])]
+if VS_ENDPOINT not in endpoints_existentes:
     vsc.create_endpoint(name=VS_ENDPOINT, endpoint_type="STANDARD")
-    print("Endpoint criado; aguardando ficar online...")
-except Exception as e:
-    print(f"Endpoint provavelmente já existe: {e}")
+    print(f"Endpoint '{VS_ENDPOINT}' criado; aguardando ficar online...")
+else:
+    print(f"Endpoint '{VS_ENDPOINT}' já existe (compartilhado) — reutilizando.")
 
 vsc.wait_for_endpoint(VS_ENDPOINT, verbose=True)
 
 # COMMAND ----------
 
 # Índice gerenciado: o Databricks calcula os embeddings automaticamente.
-try:
+# O índice vive no SEU schema, então é exclusivo. Criamos se ainda não existir.
+indices_existentes = [
+    i["name"] for i in (vsc.list_indexes(VS_ENDPOINT).get("vector_indexes") or [])
+]
+if VS_INDEX not in indices_existentes:
     vsc.create_delta_sync_index(
         endpoint_name=VS_ENDPOINT,
         index_name=VS_INDEX,
@@ -124,9 +151,9 @@ try:
         embedding_source_column="texto",
         embedding_model_endpoint_name="databricks-gte-large-en",
     )
-    print("Índice criado.")
-except Exception as e:
-    print(f"Índice provavelmente já existe: {e}")
+    print(f"Índice '{VS_INDEX}' criado.")
+else:
+    print(f"Índice '{VS_INDEX}' já existe — reutilizando.")
 
 vsc.get_index(VS_ENDPOINT, VS_INDEX).wait_until_ready(verbose=True)
 print("✅ Índice de Vector Search pronto")
@@ -138,12 +165,18 @@ print("✅ Índice de Vector Search pronto")
 
 # COMMAND ----------
 
+# Reconstrói o client caso a célula seja executada isoladamente (disable_notice
+# silencia o aviso informativo de autenticação por token de notebook).
+from databricks.vector_search.client import VectorSearchClient
+vsc = VectorSearchClient(disable_notice=True)
+
 idx = vsc.get_index(VS_ENDPOINT, VS_INDEX)
 res = idx.similarity_search(
     query_text="qual a carência para ressonância magnética?",
     columns=["arquivo", "texto"],
     num_results=2,
 )
+print("Documentos mais relevantes:")
 for linha in res["result"]["data_array"]:
     print("→", linha[0])
 
@@ -157,13 +190,19 @@ for linha in res["result"]["data_array"]:
 # MAGIC colidiria no driver compartilhado), **geramos o arquivo por usuário** — caminho e
 # MAGIC nome de módulo únicos — e injetamos o **seu** catálogo/schema no código. Assim o
 # MAGIC agente de cada pessoa aponta para o próprio índice e as próprias funções.
+# MAGIC
+# MAGIC O arquivo é gravado num **volume do Unity Catalog** (`assets`), que é persistente
+# MAGIC (sobrevive a reinício de cluster) e acessível de outras sessões — os notebooks 06 e
+# MAGIC 07 importam o agente daí, sem duplicar o código. Usamos um volume separado do
+# MAGIC `documentos` para o `.py` não ser indexado pelo Vector Search / Knowledge Assistant.
 
 # COMMAND ----------
 
-import os, textwrap
+import os
 
-# Diretório e nome de módulo exclusivos deste participante.
-AGENT_DIR = f"/tmp/workshop_agentes/{USER_SLUG}"
+# Volume dedicado ao código do agente (persistente, exclusivo do seu schema).
+spark.sql(f"CREATE VOLUME IF NOT EXISTS {CATALOGO}.{SCHEMA}.assets")
+AGENT_DIR = f"/Volumes/{CATALOGO}/{SCHEMA}/assets"
 os.makedirs(AGENT_DIR, exist_ok=True)
 AGENT_MODULE = f"agente_saude_{USER_SLUG}"
 AGENT_FILE = f"{AGENT_DIR}/{AGENT_MODULE}.py"
@@ -257,13 +296,8 @@ print(f"   (módulo: {AGENT_MODULE}, aponta para {CATALOGO}.{SCHEMA})")
 
 # COMMAND ----------
 
-# MAGIC %pip install -qqq databricks-langchain
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
-# O restartPython limpou o estado — recalculamos a identidade do participante e
-# localizamos o arquivo do agente gerado (exclusivo seu).
+# Recalculamos a identidade do participante e localizamos o arquivo do agente gerado
+# (exclusivo seu) — assim a célula funciona mesmo se executada isoladamente.
 import re, sys, importlib
 
 CATALOGO = dbutils.widgets.get("catalogo")
@@ -272,7 +306,7 @@ USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_"
 SCHEMA = f"saude_{USER_SLUG}"
 VS_INDEX = f"{CATALOGO}.{SCHEMA}.doc_cobertura_index"
 
-AGENT_DIR = f"/tmp/workshop_agentes/{USER_SLUG}"
+AGENT_DIR = f"/Volumes/{CATALOGO}/{SCHEMA}/assets"   # volume persistente do UC
 AGENT_MODULE = f"agente_saude_{USER_SLUG}"
 AGENT_FILE = f"{AGENT_DIR}/{AGENT_MODULE}.py"
 

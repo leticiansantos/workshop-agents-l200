@@ -12,6 +12,11 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install faker -q
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
 # ── Isolamento por usuário (ambiente compartilhado) ────────────────────────────
 # Cada participante grava no seu próprio schema saude_<usuario>. Ver notebook 00.
 import re
@@ -32,9 +37,17 @@ spark.sql(f"CREATE VOLUME IF NOT EXISTS {CATALOGO}.{SCHEMA}.{VOLUME}")
 spark.sql(f"USE CATALOG {CATALOGO}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
 
-# Volume de tamanho controlado — o suficiente para demonstrar sem custo alto.
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## Parâmetros de volume
+# MAGIC Quantidade de linhas a gerar — o suficiente para demonstrar sem custo alto.
+
+# COMMAND ----------
+
 N_BENEFICIARIOS = 5000
 N_SINISTROS = 40000
+print(f"Vamos gerar {N_BENEFICIARIOS:,} beneficiários e {N_SINISTROS:,} sinistros.")
 
 # COMMAND ----------
 
@@ -96,6 +109,7 @@ display(spark.table("planos"))
 import random
 from datetime import date, timedelta
 from faker import Faker
+from pyspark.sql import Row
 
 fake = Faker("pt_BR")
 Faker.seed(42)
@@ -134,6 +148,9 @@ display(spark.table("beneficiarios").limit(5))
 # MAGIC para dar o que analisar e explicar aos agentes.
 
 # COMMAND ----------
+
+import random
+from pyspark.sql import Row
 
 benef_ids = [r.beneficiario_id for r in spark.table("beneficiarios").select("beneficiario_id").collect()]
 hosp = spark.table("hospitais").collect()
@@ -224,6 +241,18 @@ for tabela, texto in comentarios.items():
     spark.sql(f"COMMENT ON TABLE {tabela} IS '{texto}'")
 
 # Chaves primárias/estrangeiras ajudam o Genie a fazer joins.
+# PKs no Unity Catalog exigem colunas NOT NULL. DataFrames criados a partir de Row
+# inferem tudo como nullable, então marcamos as colunas-chave como NOT NULL primeiro.
+colunas_chave = {
+    "beneficiarios": "beneficiario_id",
+    "planos": "plano_id",
+    "hospitais": "hospital_id",
+    "procedimentos": "procedimento_id",
+    "sinistros": "sinistro_id",
+}
+for tabela, coluna in colunas_chave.items():
+    spark.sql(f"ALTER TABLE {tabela} ALTER COLUMN {coluna} SET NOT NULL")
+
 spark.sql("ALTER TABLE beneficiarios ADD CONSTRAINT pk_benef PRIMARY KEY (beneficiario_id)")
 spark.sql("ALTER TABLE planos ADD CONSTRAINT pk_plano PRIMARY KEY (plano_id)")
 spark.sql("ALTER TABLE hospitais ADD CONSTRAINT pk_hosp PRIMARY KEY (hospital_id)")

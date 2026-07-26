@@ -15,6 +15,17 @@
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ## 0. Bibliotecas
+# MAGIC Sessão própria — instalamos as libs usadas pelo agente.
+
+# COMMAND ----------
+
+# MAGIC %pip install -U -qqq databricks-langchain databricks-vectorsearch langchain-core "mlflow[databricks]>=3.1"
+# MAGIC dbutils.library.restartPython()
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## Cenário
 # MAGIC A beneficiária Ana teve uma ressonância negada e quer entender o motivo, além de
 # MAGIC saber quando poderá refazer o pedido. O agente deve:
@@ -31,17 +42,24 @@
 
 # COMMAND ----------
 
-import re, sys, importlib
+import os, re, sys, importlib
 import mlflow
 from mlflow.types.responses import ResponsesAgentRequest
 
-# Importa o SEU agente (gerado no notebook 04, exclusivo por usuário).
+# Importa o SEU agente (gerado no notebook 04, no volume persistente do UC).
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
 CATALOGO = "workshop_agentes"
 SCHEMA = f"saude_{USER_SLUG}"
-AGENT_DIR = f"/tmp/workshop_agentes/{USER_SLUG}"
+AGENT_DIR = f"/Volumes/{CATALOGO}/{SCHEMA}/assets"
 AGENT_MODULE = f"agente_saude_{USER_SLUG}"
+AGENT_FILE = f"{AGENT_DIR}/{AGENT_MODULE}.py"
+
+assert os.path.exists(AGENT_FILE), (
+    f"Arquivo do agente não encontrado em {AGENT_FILE}. "
+    "Rode o notebook 04 (seção 4) primeiro para gerar o agente."
+)
+
 if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 AGENT = importlib.import_module(AGENT_MODULE).AGENT
