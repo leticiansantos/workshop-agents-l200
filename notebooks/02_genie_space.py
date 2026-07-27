@@ -125,7 +125,7 @@ w = WorkspaceClient()
 # MAGIC ### 🧩 EXERCÍCIO — Consultar o Genie por código
 # MAGIC Complete a função que inicia uma conversa no Genie e extrai a resposta e o SQL gerado.
 # MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
+# MAGIC **Como preencher (use o Genie — ícone de lâmpada 💡 na célula):**
 # MAGIC > "Complete `perguntar_genie`: chame `w.genie.start_conversation_and_wait(space_id,
 # MAGIC > pergunta)`. Percorra `conversa.attachments`; se o attachment tiver `.text`, guarde
 # MAGIC > `att.text.content` em `texto`; se tiver `.query`, guarde `att.query.query` em `sql`

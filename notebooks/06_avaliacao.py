@@ -240,7 +240,7 @@ def responder(pergunta: str) -> str:
 # MAGIC Crie um scorer `Guidelines` que codifique a regra de atendimento da operadora. É um
 # MAGIC **juiz LLM** que avalia se a resposta do agente segue a diretriz em texto livre.
 # MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
+# MAGIC **Como preencher (use o Genie — ícone de lâmpada 💡 na célula):**
 # MAGIC > "Crie um scorer `Guidelines` do MLflow chamado `diretriz_negocio`, com `name`
 # MAGIC > 'tom_e_seguranca' e uma `guidelines` (string) dizendo que a resposta deve estar em
 # MAGIC > português, ser cordial, NÃO inventar prazos ou valores sem fundamento, e que se não

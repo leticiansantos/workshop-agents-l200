@@ -95,7 +95,7 @@ client = get_deploy_client("databricks")
 # MAGIC ### 🧩 EXERCÍCIO — Consultar o KA por API
 # MAGIC Chame o endpoint do Knowledge Assistant e imprima a resposta.
 # MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
+# MAGIC **Como preencher (use o Genie — ícone de lâmpada 💡 na célula):**
 # MAGIC > "Chame `client.predict(endpoint=KA_ENDPOINT, inputs=...)`. O Knowledge Assistant é
 # MAGIC > um ResponsesAgent, então o payload usa a chave `input` (uma lista de mensagens com
 # MAGIC > role/content), NÃO `messages`. Faça uma pergunta sobre carência de cirurgias e

@@ -403,23 +403,23 @@ for t in ["beneficiarios", "planos", "hospitais", "procedimentos", "sinistros"]:
 # MAGIC 1. **Apresentar o formato** que se repete nos próximos notebooks: um bloco
 # MAGIC    **`🧩 EXERCÍCIO`** com a tarefa + um **prompt sugerido**, seguido de uma célula com
 # MAGIC    **`🧩 TODO`** onde você escreve o código.
-# MAGIC 2. **Ensinar a usar o Databricks Assistant** (a IA de código do notebook) para preencher
+# MAGIC 2. **Ensinar a usar o Genie** (a IA de código do notebook) para preencher
 # MAGIC    esse código — que é como você vai resolver os exercícios seguintes.
 # MAGIC
-# MAGIC ### Como usar o Databricks Assistant (✨) — passo a passo
+# MAGIC ### Como usar o Genie (💡) — passo a passo
 # MAGIC 1. Clique na célula de código logo abaixo (a com `🧩 TODO`).
-# MAGIC 2. Passe o mouse no canto superior direito da célula e clique no ícone **✨** (Assistant),
-# MAGIC    ou pressione a tecla de atalho do Assistant.
-# MAGIC 3. **Cole o prompt sugerido** abaixo no campo do Assistant e envie.
+# MAGIC 2. Passe o mouse no canto superior direito da célula e clique no ícone **💡** (Genie),
+# MAGIC    ou pressione a tecla de atalho do Genie.
+# MAGIC 3. **Cole o prompt sugerido** abaixo no campo do Genie e envie.
 # MAGIC 4. Revise o código gerado, **aceite** e **rode** a célula (Shift+Enter).
 # MAGIC 5. Travou? A solução está no notebook correspondente na pasta `respostas/`.
 # MAGIC
 # MAGIC ### A tarefa
-# MAGIC Explore os dados com SQL — o mesmo tipo de pergunta que o Genie (notebook 02) vai
-# MAGIC responder em linguagem natural. Retorne, **por plano** (`planos.nome_plano`), o total
+# MAGIC Explore os dados com SQL — o mesmo tipo de pergunta que o **Genie Space** (notebook 02)
+# MAGIC vai responder em linguagem natural. Retorne, **por plano** (`planos.nome_plano`), o total
 # MAGIC de sinistros, quantos foram negados e a **taxa de negativa (%)**, da maior para a menor.
 # MAGIC
-# MAGIC ### Prompt sugerido para o Assistant (copie e cole no ✨)
+# MAGIC ### Prompt sugerido para o Genie (copie e cole no 💡)
 # MAGIC > "Escreva uma query Spark SQL com `spark.sql` que junte `sinistros` → `beneficiarios`
 # MAGIC > → `planos`. Agrupe por `planos.nome_plano` e retorne: total de sinistros, total de
 # MAGIC > negados (status = 'Negado') e a taxa de negativa em porcentagem (negados/total*100,
@@ -427,14 +427,14 @@ for t in ["beneficiarios", "planos", "hospitais", "procedimentos", "sinistros"]:
 
 # COMMAND ----------
 
-# 🧩 TODO: use o Assistant (✨) e o prompt acima para escrever a consulta aqui.
+# 🧩 TODO: use o Genie (💡) e o prompt acima para escrever a consulta aqui.
 # df = spark.sql(""" ... """)
 # display(df)
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC **Desafios extras** (opcionais, use o Assistant): responda também via SQL —
+# MAGIC **Desafios extras** (opcionais, use o Genie): responda também via SQL —
 # MAGIC - Quais os **5 procedimentos** com maior valor total aprovado?
 # MAGIC - Qual a distribuição de sinistros por `status` (Aprovado / Negado / Em análise)?
 # MAGIC - Quais os **motivos de negativa** mais comuns?

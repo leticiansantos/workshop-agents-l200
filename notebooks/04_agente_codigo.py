@@ -81,8 +81,8 @@ print("✅ Função de exemplo criada: sinistros_do_beneficiario")
 # MAGIC Crie uma UC Function que retorne carência e valor de referência de um procedimento
 # MAGIC a partir de uma **descrição parcial** (busca por texto). Ela vira uma **tool** do agente.
 # MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
-# MAGIC Peça ao Assistant, tomando a função de exemplo acima como base:
+# MAGIC **Como preencher (use o Genie — ícone de lâmpada 💡 na célula):**
+# MAGIC Peça ao Genie, tomando a função de exemplo acima como base:
 # MAGIC > "Crie uma UC Function `{CATALOGO}.{SCHEMA}.carencia_procedimento(p_descricao STRING)`
 # MAGIC > que retorna uma TABLE com (procedimento STRING, categoria STRING, valor_referencia
 # MAGIC > DOUBLE, carencia_dias INT). Selecione da tabela `procedimentos` as linhas em que

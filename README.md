@@ -109,18 +109,18 @@ workshop-agentes-saude/
 
 ---
 
-## 🧩 Exercícios com o Databricks Assistant
+## 🧩 Exercícios com o Genie
 
 Os notebooks da pasta `notebooks/` têm **lacunas** marcadas com **`🧩 EXERCÍCIO`**. Cada
 lacuna traz:
 - o **objetivo** do trecho a completar,
-- um **prompt sugerido** para o **Databricks Assistant** (o ícone **✨** que aparece no canto
-  de cada célula do notebook),
+- um **prompt sugerido** para o **Genie** (o ícone de **lâmpada 💡** que aparece no
+  canto de cada célula do notebook),
 - **dicas** sobre armadilhas comuns.
 
 **Como resolver cada exercício:**
 1. Leia a instrução `🧩 EXERCÍCIO` acima da célula.
-2. Clique no **✨ Assistant** na célula com o `🧩 TODO` e cole/adapte o prompt sugerido.
+2. Clique no **💡 Genie** na célula com o `🧩 TODO` e cole/adapte o prompt sugerido.
 3. Revise o código gerado, rode a célula e confira o resultado.
 4. Travou? A solução funcional está no notebook correspondente em **`respostas/`**.
 

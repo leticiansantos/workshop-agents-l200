@@ -97,7 +97,7 @@ w = WorkspaceClient()
 # MAGIC O supervisor precisa decidir para qual agente enviar a pergunta. Complete o **prompt
 # MAGIC de roteamento** e a **função `rotear`** que consulta o LLM.
 # MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
+# MAGIC **Como preencher (use o Genie — ícone de lâmpada 💡 na célula):**
 # MAGIC > "Escreva um prompt que classifique a pergunta do usuário em UMA de três categorias:
 # MAGIC > GENIE (números, estatísticas, contagens, taxas, rankings), COBERTURA (regras,
 # MAGIC > carência, reembolso, exclusões) ou BENEFICIARIO (histórico de um beneficiário
