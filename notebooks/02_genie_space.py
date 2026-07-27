@@ -31,7 +31,8 @@
 # COMMAND ----------
 
 import re
-CATALOGO = "workshop_agentes"
+dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
+CATALOGO = dbutils.widgets.get("catalogo")
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
 SCHEMA = f"saude_{USER_SLUG}"

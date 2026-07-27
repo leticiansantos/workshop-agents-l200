@@ -47,9 +47,11 @@ import mlflow
 from mlflow.types.responses import ResponsesAgentRequest
 
 # Importa o SEU agente (gerado no notebook 04, no volume persistente do UC).
+# ⚠️ Use o MESMO catálogo do notebook 04 (o widget deve bater).
+dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-CATALOGO = "workshop_agentes"
+CATALOGO = dbutils.widgets.get("catalogo")
 SCHEMA = f"saude_{USER_SLUG}"
 AGENT_DIR = f"/Volumes/{CATALOGO}/{SCHEMA}/assets"
 AGENT_MODULE = f"agente_saude_{USER_SLUG}"

@@ -26,7 +26,7 @@ AGENTE_ENDPOINT = dbutils.widgets.get("agente_endpoint")
 
 # COMMAND ----------
 
-# MAGIC %pip install -U -qqq "mlflow[databricks]>=3.1" databricks-agents databricks-langchain databricks-vectorsearch langchain-core
+# MAGIC %pip install -U -qqq "mlflow[databricks]>=3.3" databricks-agents databricks-langchain databricks-vectorsearch langchain-core
 # MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
@@ -78,17 +78,55 @@ print(resp.output[-1].content)
 # MAGIC %md
 # MAGIC Abra a aba **Traces** do experimento (ou o painel lateral do MLflow) e navegue
 # MAGIC pela árvore: `AGENT → LLM → tool calls`. Cada span traz inputs, outputs e latência.
+# MAGIC
+# MAGIC ### ℹ️ Sobre o aviso "Tool call metrics require Unity Catalog trace storage"
+# MAGIC A **árvore de traces** (spans, inputs/outputs, latência por passo) já funciona — é o
+# MAGIC que usamos para depurar o agente. O aviso na UI refere-se a **métricas agregadas
+# MAGIC opcionais** que exigem armazenar os traces no Unity Catalog:
+# MAGIC - percentis de latência (p50/p90/p99),
+# MAGIC - uso e estatísticas de tokens,
+# MAGIC - custo por chamada e tendências,
+# MAGIC - métricas de tool call (uso, latência, taxa de erro).
+# MAGIC
+# MAGIC Nada disso é necessário para o workshop — o traço individual já mostra tudo que
+# MAGIC precisamos. Se **quiser** habilitar os dashboards agregados, aponte o experimento
+# MAGIC para uma tabela de traces no UC (célula abaixo, opcional).
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### (Opcional) Habilitar UC trace storage
+# MAGIC Cria uma localização de traces governada pelo Unity Catalog no **seu** schema.
+# MAGIC Requer MLflow 3 recente. Se der erro de versão/permite, apenas pule — não é
+# MAGIC necessário para o restante do notebook.
+
+# COMMAND ----------
+
+# Opcional — descomente para ligar o armazenamento de traces no UC e desbloquear os
+# gráficos agregados (percentis, tokens, custo, métricas de tool call).
+# import mlflow
+# try:
+#     mlflow.set_experiment(f"/Users/{_usuario}/workshop_agentes_avaliacao")
+#     mlflow.tracking.MlflowClient().set_experiment_trace_location(
+#         experiment_id=mlflow.get_experiment_by_name(
+#             f"/Users/{_usuario}/workshop_agentes_avaliacao").experiment_id,
+#         location=f"{CATALOGO}.{SCHEMA}.mlflow_traces",
+#     )
+#     print("✅ UC trace storage habilitado — os gráficos agregados aparecerão na UI.")
+# except Exception as e:
+#     print(f"Não foi possível habilitar UC trace storage (opcional, pode ignorar): {e}")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## 2. Dataset de avaliação
-# MAGIC Curamos um pequeno conjunto de perguntas com expectativas. Em produção, você
-# MAGIC constrói datasets a partir de traces reais e feedback de especialistas.
+# MAGIC Curamos um pequeno conjunto de perguntas com expectativas e o **persistimos no Unity
+# MAGIC Catalog** como um *evaluation dataset*. Assim ele aparece na aba **Datasets** da UI
+# MAGIC do experimento, fica versionado e reutilizável (não só uma lista em memória).
 
 # COMMAND ----------
 
-eval_data = [
+registros = [
     {
         "inputs": {"pergunta": "Qual a carência para ressonância magnética?"},
         "expectations": {"expected_facts": ["180 dias"]},
@@ -112,6 +150,23 @@ eval_data = [
                                             "solicitar em até 60 dias"]},
     },
 ]
+
+# COMMAND ----------
+
+# Cria (ou recupera) um dataset gerenciado no UC, no SEU schema. Aparece na aba Datasets.
+import mlflow.genai.datasets
+
+DATASET_TABLE = f"{CATALOGO}.{SCHEMA}.eval_dataset_atendimento"
+
+try:
+    eval_dataset = mlflow.genai.datasets.get_dataset(DATASET_TABLE)
+    print(f"Dataset existente recuperado: {DATASET_TABLE}")
+except Exception:
+    eval_dataset = mlflow.genai.datasets.create_dataset(uc_table_name=DATASET_TABLE)
+    print(f"Dataset criado: {DATASET_TABLE}")
+
+eval_dataset.merge_records(registros)
+print(f"✅ Dataset com {len(eval_dataset.to_df())} registros — veja em Experiment → Datasets.")
 
 # COMMAND ----------
 
@@ -160,19 +215,41 @@ scorers = [
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ### Registrar os judges no experimento (aba Judges)
+# MAGIC `.register()` grava o scorer no experimento — é isso que faz o juiz aparecer na aba
+# MAGIC **Judges** da UI e permite reutilizá-lo/monitorá-lo depois. Fazemos isso para a nossa
+# MAGIC diretriz de negócio e para o Safety.
+
+# COMMAND ----------
+
+for judge in [diretriz_negocio, Safety()]:
+    try:
+        judge.register(name=judge.name)
+        print(f"✅ Judge registrado: {judge.name}")
+    except Exception as e:
+        print(f"Judge '{judge.name}' já registrado ou não pôde registrar: {e}")
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC ## 5. Rodar a avaliação
 
 # COMMAND ----------
 
 import mlflow
 
+# Passamos o DATASET PERSISTIDO (não a lista em memória) — assim a run de avaliação
+# fica ligada ao dataset do UC, visível na aba Datasets.
 resultados = mlflow.genai.evaluate(
-    data=eval_data,
-    predict_fn=lambda pergunta: responder(pergunta),
+    data=eval_dataset,
+    predict_fn=responder,   # recebe os inputs desempacotados (kwarg 'pergunta')
     scorers=scorers,
 )
 
-print("✅ Avaliação concluída. Veja os resultados na UI do MLflow (aba Evaluations).")
+print("✅ Avaliação concluída.")
+print("   • Resultados por pergunta → aba Evaluations do experimento")
+print("   • Dataset usado ...........→ aba Datasets")
+print("   • Juízes registrados ......→ aba Judges")
 resultados.metrics
 
 # COMMAND ----------
