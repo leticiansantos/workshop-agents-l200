@@ -89,26 +89,18 @@ assert KA_ENDPOINT, "Informe o nome do serving endpoint do Knowledge Assistant."
 from mlflow.deployments import get_deploy_client
 client = get_deploy_client("databricks")
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO — Consultar o KA por API
-# MAGIC Chame o endpoint do Knowledge Assistant e imprima a resposta.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
-# MAGIC > "Chame `client.predict(endpoint=KA_ENDPOINT, inputs=...)`. O Knowledge Assistant é
-# MAGIC > um ResponsesAgent, então o payload usa a chave `input` (uma lista de mensagens com
-# MAGIC > role/content), NÃO `messages`. Faça uma pergunta sobre carência de cirurgias e
-# MAGIC > imprima a resposta com `json.dumps(..., ensure_ascii=False)`."
-# MAGIC
-# MAGIC 💡 Erro comum: usar `"messages"`. Endpoints de agente (KA/ResponsesAgent) usam `"input"`.
-
-# COMMAND ----------
-
-# 🧩 TODO: chame o endpoint do KA usando a chave "input" e imprima a resposta.
+# O Knowledge Assistant é servido como um ResponsesAgent — o payload usa a chave
+# "input" (formato Responses), não "messages" (formato chat).
+resposta = client.predict(
+    endpoint=KA_ENDPOINT,
+    inputs={
+        "input": [
+            {"role": "user", "content": "Qual a carência para cirurgias e internações?"}
+        ]
+    },
+)
 import json
-resposta = None  # substitua por client.predict(endpoint=KA_ENDPOINT, inputs={"input": [...]})
-print(json.dumps(resposta, indent=2, ensure_ascii=False)[:2000] if resposta else "TODO")
+print(json.dumps(resposta, indent=2, ensure_ascii=False)[:2000])
 
 # COMMAND ----------
 

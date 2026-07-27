@@ -90,30 +90,21 @@ mlflow.langchain.autolog()
 client = get_deploy_client("databricks")
 w = WorkspaceClient()
 
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO — Roteador do supervisor
-# MAGIC O supervisor precisa decidir para qual agente enviar a pergunta. Complete o **prompt
-# MAGIC de roteamento** e a **função `rotear`** que consulta o LLM.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
-# MAGIC > "Escreva um prompt que classifique a pergunta do usuário em UMA de três categorias:
-# MAGIC > GENIE (números, estatísticas, contagens, taxas, rankings), COBERTURA (regras,
-# MAGIC > carência, reembolso, exclusões) ou BENEFICIARIO (histórico de um beneficiário
-# MAGIC > específico, id BFxxxxxx). O modelo deve responder só com a palavra da categoria.
-# MAGIC > Depois complete `rotear`: chame `client.predict(endpoint=LLM_ENDPOINT, inputs={...})`
-# MAGIC > com `messages` (formato chat), `max_tokens=5` e `temperature=0`, e retorne o
-# MAGIC > conteúdo em maiúsculas."
-# MAGIC
-# MAGIC 💡 `temperature=0` deixa a classificação determinística — ideal para roteamento.
+ROTEADOR_PROMPT = """Classifique a pergunta do usuário em UMA categoria:
+- GENIE: números, estatísticas, contagens, valores, rankings, "quantos", "qual a taxa".
+- COBERTURA: regras, carência, reembolso, exclusões, o que o plano cobre.
+- BENEFICIARIO: histórico/sinistros de um beneficiário específico (id BFxxxxxx) ou caso individual.
+Responda somente com a palavra: GENIE, COBERTURA ou BENEFICIARIO.
 
-# COMMAND ----------
-
-ROTEADOR_PROMPT = ""  # 🧩 TODO: escreva o prompt de classificação (use {pergunta} como placeholder)
+Pergunta: {pergunta}"""
 
 @mlflow.trace(name="rotear")
 def rotear(pergunta: str) -> str:
-    # 🧩 TODO: chame o LLM com ROTEADOR_PROMPT e retorne a categoria em maiúsculas.
-    raise NotImplementedError("Complete a função rotear (veja o exercício acima).")
+    r = client.predict(endpoint=LLM_ENDPOINT, inputs={
+        "messages": [{"role": "user", "content": ROTEADOR_PROMPT.format(pergunta=pergunta)}],
+        "max_tokens": 5, "temperature": 0,
+    })
+    return r["choices"][0]["message"]["content"].strip().upper()
 
 @mlflow.trace(name="chamar_genie")
 def chamar_genie(pergunta):

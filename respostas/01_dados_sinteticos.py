@@ -164,24 +164,6 @@ motivos_negativa = [
     "Limite de utilização excedido",
 ]
 
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO 1 — Regras de negativa dos sinistros
-# MAGIC Complete a lógica que decide o `status` de cada sinistro. Sem boas regras de negativa,
-# MAGIC os agentes não terão o que analisar/explicar depois.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ no canto da célula):**
-# MAGIC Selecione a célula abaixo, abra o Assistant e peça algo como:
-# MAGIC > "Complete a função `gerar_sinistro`: comece com status 'Aprovado' e motivo None.
-# MAGIC > Sorteie `r = random.random()`. Se o hospital não for credenciado (`h.credenciado`
-# MAGIC > é False) e `r < 0.9`, marque status 'Negado' com motivo 'Hospital não credenciado'.
-# MAGIC > Senão, se `r < 0.12`, status 'Negado' com um motivo aleatório de `motivos_negativa`.
-# MAGIC > Senão, se `r < 0.20`, status 'Em análise' com motivo None. `valor_aprovado` deve
-# MAGIC > ser `valor_solicitado` quando aprovado, senão 0.0."
-# MAGIC
-# MAGIC Confira o resultado na pasta `respostas/` se travar.
-
-# COMMAND ----------
-
 def gerar_sinistro(i):
     b = random.choice(benef_ids)
     h = random.choice(hosp)
@@ -189,13 +171,18 @@ def gerar_sinistro(i):
     data_evento = fake.date_between(start_date="-2y", end_date="today")
     valor_solicitado = round(float(p.valor_referencia) * random.uniform(0.8, 1.4), 2)
 
-    # 🧩 TODO: complete as regras de negativa e o cálculo de valor_aprovado.
-    # Variáveis disponíveis: h.credenciado (bool), motivos_negativa (lista), valor_solicitado.
+    # Regras sintéticas de negativa.
     status = "Aprovado"
     motivo = None
-    # ... sua lógica aqui ...
-    valor_aprovado = None  # 🧩 TODO: valor_solicitado se aprovado, senão 0.0
+    r = random.random()
+    if not h.credenciado and r < 0.9:
+        status, motivo = "Negado", "Hospital não credenciado"
+    elif r < 0.12:
+        status, motivo = "Negado", random.choice(motivos_negativa)
+    elif r < 0.20:
+        status, motivo = "Em análise", None
 
+    valor_aprovado = valor_solicitado if status == "Aprovado" else 0.0
     return Row(
         sinistro_id=f"SN{i:07d}",
         beneficiario_id=b,

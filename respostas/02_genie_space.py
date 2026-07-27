@@ -119,25 +119,21 @@ from databricks.sdk import WorkspaceClient
 
 w = WorkspaceClient()
 
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO — Consultar o Genie por código
-# MAGIC Complete a função que inicia uma conversa no Genie e extrai a resposta e o SQL gerado.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
-# MAGIC > "Complete `perguntar_genie`: chame `w.genie.start_conversation_and_wait(space_id,
-# MAGIC > pergunta)`. Percorra `conversa.attachments`; se o attachment tiver `.text`, guarde
-# MAGIC > `att.text.content` em `texto`; se tiver `.query`, guarde `att.query.query` em `sql`
-# MAGIC > e busque o resultado com `w.genie.get_message_query_result(space_id,
-# MAGIC > conversa.conversation_id, conversa.id)`. Retorne (texto, sql, dados)."
-# MAGIC
-# MAGIC 💡 Cuidado: um attachment pode ser SQL (sem texto). Cheque `if att.text:` antes de `.content`.
-
-# COMMAND ----------
-
 def perguntar_genie(pergunta: str, space_id: str = GENIE_SPACE_ID):
     """Inicia uma conversa no Genie e retorna a resposta e o SQL gerado."""
+    conversa = w.genie.start_conversation_and_wait(space_id, pergunta)
+
     texto, sql, dados = None, None, None
-    # 🧩 TODO: inicie a conversa e preencha texto/sql/dados (veja o exercício acima).
+    for att in (conversa.attachments or []):
+        if att.text:
+            texto = att.text.content
+        if att.query:
+            sql = att.query.query
+            # Busca o resultado tabular da query executada.
+            resultado = w.genie.get_message_query_result(
+                space_id, conversa.conversation_id, conversa.id
+            )
+            dados = resultado.statement_response
     return texto, sql, dados
 
 texto, sql, dados = perguntar_genie(

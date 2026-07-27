@@ -52,13 +52,9 @@ print(f"VS index (exclusivo)........: {VS_INDEX}")
 # MAGIC ## 1. Ferramentas como UC Functions
 # MAGIC UC Functions são governadas (permissões, lineage) e podem ser chamadas por qualquer
 # MAGIC agente. Criamos duas: consultar sinistros de um beneficiário e verificar carência.
-# MAGIC
-# MAGIC A primeira (`sinistros_do_beneficiario`) já vem pronta como **exemplo**. A segunda
-# MAGIC é um **exercício**.
 
 # COMMAND ----------
 
-# Exemplo pronto: histórico de sinistros de um beneficiário.
 spark.sql(f"""
 CREATE OR REPLACE FUNCTION {CATALOGO}.{SCHEMA}.sinistros_do_beneficiario(p_beneficiario_id STRING)
 RETURNS TABLE(sinistro_id STRING, data_evento DATE, procedimento STRING,
@@ -72,34 +68,16 @@ RETURN
   WHERE s.beneficiario_id = p_beneficiario_id
   ORDER BY s.data_evento DESC
 """)
-print("✅ Função de exemplo criada: sinistros_do_beneficiario")
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO 2 — UC Function `carencia_procedimento`
-# MAGIC Crie uma UC Function que retorne carência e valor de referência de um procedimento
-# MAGIC a partir de uma **descrição parcial** (busca por texto). Ela vira uma **tool** do agente.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
-# MAGIC Peça ao Assistant, tomando a função de exemplo acima como base:
-# MAGIC > "Crie uma UC Function `{CATALOGO}.{SCHEMA}.carencia_procedimento(p_descricao STRING)`
-# MAGIC > que retorna uma TABLE com (procedimento STRING, categoria STRING, valor_referencia
-# MAGIC > DOUBLE, carencia_dias INT). Selecione da tabela `procedimentos` as linhas em que
-# MAGIC > `descricao` contém `p_descricao` (case-insensitive, use LIKE com lower()). Inclua um
-# MAGIC > COMMENT descritivo — ele é importante porque o agente usa isso para escolher a tool."
-# MAGIC
-# MAGIC 💡 Dica: o `COMMENT` da função é o que o LLM lê para decidir quando chamá-la. Capriche.
-
-# COMMAND ----------
-
-# 🧩 TODO: crie a função carencia_procedimento (veja o exercício acima).
-# spark.sql(f"""
-# CREATE OR REPLACE FUNCTION {CATALOGO}.{SCHEMA}.carencia_procedimento(p_descricao STRING)
-# ...
-# """)
-
-# COMMAND ----------
+spark.sql(f"""
+CREATE OR REPLACE FUNCTION {CATALOGO}.{SCHEMA}.carencia_procedimento(p_descricao STRING)
+RETURNS TABLE(procedimento STRING, categoria STRING, valor_referencia DOUBLE, carencia_dias INT)
+COMMENT 'Retorna a carência (em dias) e o valor de referência de um procedimento pela descrição parcial.'
+RETURN
+  SELECT descricao AS procedimento, categoria, valor_referencia, carencia_dias
+  FROM {CATALOGO}.{SCHEMA}.procedimentos
+  WHERE lower(descricao) LIKE '%' || lower(p_descricao) || '%'
+""")
 
 print("✅ UC Functions criadas")
 display(spark.sql(f"SELECT * FROM {CATALOGO}.{SCHEMA}.sinistros_do_beneficiario('BF000001')"))

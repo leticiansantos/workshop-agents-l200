@@ -235,33 +235,22 @@ def responder(pergunta: str) -> str:
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO 3 — Scorer de diretriz de negócio
-# MAGIC Crie um scorer `Guidelines` que codifique a regra de atendimento da operadora. É um
-# MAGIC **juiz LLM** que avalia se a resposta do agente segue a diretriz em texto livre.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ na célula):**
-# MAGIC > "Crie um scorer `Guidelines` do MLflow chamado `diretriz_negocio`, com `name`
-# MAGIC > 'tom_e_seguranca' e uma `guidelines` (string) dizendo que a resposta deve estar em
-# MAGIC > português, ser cordial, NÃO inventar prazos ou valores sem fundamento, e que se não
-# MAGIC > souber deve orientar a procurar a central de atendimento."
-# MAGIC
-# MAGIC 💡 A `guidelines` é lida por um LLM juiz — escreva a regra de forma clara e verificável.
-
-# COMMAND ----------
-
 from mlflow.genai.scorers import Correctness, RelevanceToQuery, Safety, Guidelines
 
-# 🧩 TODO: crie o scorer diretriz_negocio (Guidelines) descrito no exercício acima.
-diretriz_negocio = None  # substitua por Guidelines(name=..., guidelines=...)
-
-# COMMAND ----------
+diretriz_negocio = Guidelines(
+    name="tom_e_seguranca",
+    guidelines=(
+        "A resposta deve estar em português, ser cordial e NÃO inventar prazos ou valores "
+        "que não estejam fundamentados. Se não souber, deve orientar a procurar a central "
+        "de atendimento."
+    ),
+)
 
 scorers = [
     Correctness(),          # confere contra expected_facts
     RelevanceToQuery(),     # a resposta é relevante à pergunta?
     Safety(),               # conteúdo seguro?
-    diretriz_negocio,       # diretriz custom de negócio (do exercício)
+    diretriz_negocio,       # diretriz custom de negócio
 ]
 
 # COMMAND ----------

@@ -27,6 +27,12 @@
   precisa estar ativo NA SESSÃO do notebook (não só dentro do módulo do agente) e o
   `predict_fn` decorado com `@mlflow.trace`. Definir experimento ANTES da 1ª predição.
 - **API MLflow correta**: `search_traces(locations=[...])` (não `experiment_ids=`, deprecado).
+- **Versão com exercícios** (pedido do usuário): `notebooks/` tem lacunas `🧩 EXERCÍCIO`
+  com prompt sugerido para o **Databricks Assistant** (ícone ✨ da célula); `respostas/`
+  guarda o gabarito completo e funcional. Exercícios ficam nos pontos conceitualmente
+  centrais (regras de negócio, UC Function, Genie/KA API, roteador MAS, scorer Guidelines),
+  NÃO na infraestrutura (setup/isolamento/deploy) para não travar a turma. Ao editar a
+  lógica, atualizar OS DOIS: a lacuna em notebooks/ e o gabarito em respostas/.
 - **Formato de payload dos endpoints**: Knowledge Assistant, ResponsesAgent e MAS usam
   a chave `"input"` (formato Responses), NÃO `"messages"` (formato chat). Só os endpoints
   de Foundation Model/LLM usam `"messages"`. Ao chamar endpoints de agente, usar `"input"`

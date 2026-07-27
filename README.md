@@ -99,10 +99,46 @@ workshop-agentes-saude/
 │   ├── 05_multi_agent.py         ← Multi-Agent Supervisor
 │   ├── 06_avaliacao.py           ← MLflow tracing + evaluation
 │   └── 07_capstone.py            ← projeto guiado final
+├── respostas/                    ← notebooks COMPLETOS (gabarito, sem lacunas)
+│   ├── 00_setup.py … 07_capstone.py
+│   └── README.md
 ├── dados/
 │   └── README.md                 ← dicionário de dados do domínio de saúde
 └── tasks/                        ← notas de planejamento do facilitador
 ```
+
+---
+
+## 🧩 Exercícios com o Databricks Assistant
+
+Os notebooks da pasta `notebooks/` têm **lacunas** marcadas com **`🧩 EXERCÍCIO`**. Cada
+lacuna traz:
+- o **objetivo** do trecho a completar,
+- um **prompt sugerido** para o **Databricks Assistant** (o ícone **✨** que aparece no canto
+  de cada célula do notebook),
+- **dicas** sobre armadilhas comuns.
+
+**Como resolver cada exercício:**
+1. Leia a instrução `🧩 EXERCÍCIO` acima da célula.
+2. Clique no **✨ Assistant** na célula com o `🧩 TODO` e cole/adapte o prompt sugerido.
+3. Revise o código gerado, rode a célula e confira o resultado.
+4. Travou? A solução funcional está no notebook correspondente em **`respostas/`**.
+
+> Os exercícios ficam nos pontos **conceitualmente centrais** de cada notebook (regras de
+> negócio, UC Functions, scorers, roteamento do supervisor). A infraestrutura (setup,
+> isolamento por usuário, deploy) já vem pronta para não travar a turma.
+
+Onde está cada exercício:
+
+| Notebook | Exercício |
+|----------|-----------|
+| `01` | Regras de negativa dos sinistros (lógica de negócio) |
+| `02` | Consultar o Genie por código (Conversation API) |
+| `03` | Consultar o Knowledge Assistant por API (payload `input`) |
+| `04` | Criar a UC Function `carencia_procedimento` (tool do agente) |
+| `05` | Roteador do Multi-Agent Supervisor |
+| `06` | Scorer `Guidelines` de diretriz de negócio |
+| `07` | Capstone — desafios abertos (estender o agente) |
 
 ---
 
@@ -120,6 +156,9 @@ e importam diretamente como notebooks:
 
 Execute os notebooks **na ordem** (`00 → 07`). Todos herdam as variáveis de catálogo/schema
 definidas no `00_setup.py`.
+
+Para a turma: distribua a pasta **`notebooks/`** (com exercícios). Mantenha **`respostas/`**
+como gabarito do facilitador (ou libere ao final).
 
 ---
 
