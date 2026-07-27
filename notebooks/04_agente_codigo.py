@@ -340,8 +340,13 @@ from mlflow.models.resources import (
 
 LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
 
-# Experimento MLflow exclusivo do participante (evita misturar runs no ambiente compartilhado).
-mlflow.set_experiment(f"/Users/{_usuario}/workshop_agentes_saude")
+# Experimento MLflow exclusivo do participante. O nome-folha inclui o USER_SLUG para ser
+# único mesmo se os notebooks rodarem como job/service principal (current_user() igual
+# para todos) ou o experimento cair numa pasta compartilhada.
+try:
+    mlflow.set_experiment(f"/Users/{_usuario}/workshop_agentes_saude_{USER_SLUG}")
+except Exception:
+    mlflow.set_experiment(f"/Shared/workshop_agentes/workshop_agentes_saude_{USER_SLUG}")
 
 recursos = [
     DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),

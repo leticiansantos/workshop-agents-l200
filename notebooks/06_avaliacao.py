@@ -64,6 +64,12 @@ if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 AGENT = importlib.import_module(AGENT_MODULE).AGENT
 
+# Garante o rastreamento na SESSÃO do notebook (não só dentro do módulo do agente):
+# tracking no Databricks + autolog do LangChain. Sem isto, dependendo da versão, os
+# spans do agente podem não ser capturados nesta sessão.
+mlflow.set_tracking_uri("databricks")
+mlflow.langchain.autolog()
+
 # COMMAND ----------
 
 # MAGIC %md
@@ -84,10 +90,25 @@ AGENT = importlib.import_module(AGENT_MODULE).AGENT
 dbutils.widgets.text("sql_warehouse_id", "", "SQL Warehouse ID (opcional p/ UC traces)")
 SQL_WAREHOUSE_ID = dbutils.widgets.get("sql_warehouse_id")
 
-EXP_PADRAO = f"/Users/{_usuario}/workshop_agentes_avaliacao"
+# ⚠️ Ambiente compartilhado: o nome-folha do experimento inclui o USER_SLUG. Assim ele é
+# único mesmo que os notebooks rodem como job/service principal (current_user() igual para
+# todos) ou que o experimento seja criado numa pasta compartilhada. Ancoramos na home do
+# usuário quando possível e caímos para uma pasta compartilhada se a home não for gravável.
+EXP_LEAF = f"workshop_agentes_avaliacao_{USER_SLUG}"
+
+def _definir_experimento(nome_folha):
+    """Tenta criar/definir o experimento na home do usuário; se falhar, usa /Shared."""
+    for base in (f"/Users/{_usuario}", "/Shared/workshop_agentes"):
+        caminho = f"{base}/{nome_folha}"
+        try:
+            mlflow.set_experiment(caminho)
+            return caminho
+        except Exception:
+            continue
+    raise RuntimeError("Não foi possível criar o experimento em nenhum caminho.")
 
 if not SQL_WAREHOUSE_ID:
-    mlflow.set_experiment(EXP_PADRAO)
+    EXP_PADRAO = _definir_experimento(EXP_LEAF)
     print(f"Sem SQL Warehouse ID — usando experimento normal: {EXP_PADRAO}")
     print("(a árvore de traces funciona; dashboards agregados ficam desabilitados)")
 else:
@@ -96,9 +117,9 @@ else:
 
     os.environ["MLFLOW_TRACING_SQL_WAREHOUSE_ID"] = SQL_WAREHOUSE_ID
 
-    # O UC storage exige um experimento SEM traces. Usamos um experimento dedicado ao UC;
-    # se ele já existir com traces, criamos um novo com sufixo incremental.
-    base = f"/Users/{_usuario}/workshop_agentes_avaliacao_uc"
+    # O UC storage exige um experimento SEM traces. Nome-folha inclui o USER_SLUG (único);
+    # se já existir com traces, criamos um novo com sufixo incremental.
+    base = f"/Users/{_usuario}/{EXP_LEAF}_uc"
     exp_nome = base
     sufixo = 0
     while True:
@@ -124,7 +145,8 @@ else:
         print(f"✅ UC trace storage habilitado no experimento: {exp_nome}")
     except Exception as e:
         print(f"Não foi possível habilitar UC trace storage (opcional): {e}")
-        mlflow.set_experiment(EXP_PADRAO)
+        print("Caindo para o experimento normal.")
+        _definir_experimento(EXP_LEAF)
 
 # COMMAND ----------
 
@@ -143,11 +165,25 @@ print(resp.output[-1].content)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Abra a aba **Traces** do experimento e navegue pela árvore: `AGENT → LLM → tool
-# MAGIC calls`. Cada span traz inputs, outputs e latência.
-# MAGIC
-# MAGIC Se você habilitou o UC trace storage acima, as abas de **métricas agregadas**
-# MAGIC (percentis de latência, tokens, custo, métricas de tool call) também ficam disponíveis.
+# MAGIC ### Verificar que o trace foi gravado
+# MAGIC Confirmamos em qual experimento os traces caíram e quantos existem. Se aparecer 0,
+# MAGIC quase sempre é: (a) autolog não ativo antes da predição, ou (b) experimento ativo
+# MAGIC diferente do que você está olhando na UI.
+
+# COMMAND ----------
+
+exp_ativo = mlflow.get_experiment(mlflow.tracking.fluent._get_experiment_id())
+traces = mlflow.search_traces(
+    experiment_ids=[exp_ativo.experiment_id], max_results=10, return_type="list"
+)
+print(f"Experimento ativo: {exp_ativo.name}")
+print(f"  experiment_id...: {exp_ativo.experiment_id}")
+print(f"  traces gravados.: {len(traces)}")
+
+_host = spark.conf.get("spark.databricks.workspaceUrl", None)
+if _host:
+    print(f"\nAbra: https://{_host}/ml/experiments/{exp_ativo.experiment_id}?compareRunsMode=TRACES")
+print("\n⚠️ Confira que a UI está aberta NESTE experiment_id (não em outro).")
 
 # COMMAND ----------
 
