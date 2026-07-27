@@ -64,8 +64,75 @@ if AGENT_DIR not in sys.path:
     sys.path.insert(0, AGENT_DIR)
 AGENT = importlib.import_module(AGENT_MODULE).AGENT
 
-# Experimento exclusivo do participante (NÃO usar /Shared — colidiria entre pessoas).
-mlflow.set_experiment(f"/Users/{_usuario}/workshop_agentes_avaliacao")
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Definir o experimento — com UC trace storage OPCIONAL
+# MAGIC ⚠️ **Ordem importa**: o UC trace storage só pode ser ligado a um experimento que
+# MAGIC **ainda não tem nenhum trace**. Por isso ligamos AQUI, antes da primeira predição.
+# MAGIC
+# MAGIC Preencha o widget `sql_warehouse_id` para habilitar os dashboards agregados
+# MAGIC (percentis, tokens, custo, métricas de tool call). Se deixar vazio, usamos o
+# MAGIC experimento normal (a árvore de traces funciona do mesmo jeito).
+# MAGIC
+# MAGIC **Requisitos do UC trace storage** (se não atender, deixe o widget vazio):
+# MAGIC `mlflow[databricks] >= 3.9`, preview "OpenTelemetry on Databricks", um SQL Warehouse,
+# MAGIC e região `us-east-1`/`us-west-2`.
+
+# COMMAND ----------
+
+dbutils.widgets.text("sql_warehouse_id", "", "SQL Warehouse ID (opcional p/ UC traces)")
+SQL_WAREHOUSE_ID = dbutils.widgets.get("sql_warehouse_id")
+
+EXP_PADRAO = f"/Users/{_usuario}/workshop_agentes_avaliacao"
+
+if not SQL_WAREHOUSE_ID:
+    mlflow.set_experiment(EXP_PADRAO)
+    print(f"Sem SQL Warehouse ID — usando experimento normal: {EXP_PADRAO}")
+    print("(a árvore de traces funciona; dashboards agregados ficam desabilitados)")
+else:
+    from mlflow.entities import UCSchemaLocation
+    from mlflow.tracing.enablement import set_experiment_trace_location
+
+    os.environ["MLFLOW_TRACING_SQL_WAREHOUSE_ID"] = SQL_WAREHOUSE_ID
+
+    # O UC storage exige um experimento SEM traces. Usamos um experimento dedicado ao UC;
+    # se ele já existir com traces, criamos um novo com sufixo incremental.
+    base = f"/Users/{_usuario}/workshop_agentes_avaliacao_uc"
+    exp_nome = base
+    sufixo = 0
+    while True:
+        exp = mlflow.get_experiment_by_name(exp_nome)
+        if exp is None:
+            exp_id = mlflow.create_experiment(exp_nome)   # experimento novo, sem traces
+            break
+        # Já existe: só reutiliza se ainda não tiver traces.
+        tem_traces = len(mlflow.search_traces(experiment_ids=[exp.experiment_id],
+                                              max_results=1, return_type="list")) > 0
+        if not tem_traces:
+            exp_id = exp.experiment_id
+            break
+        sufixo += 1
+        exp_nome = f"{base}_{sufixo}"
+
+    try:
+        set_experiment_trace_location(
+            location=UCSchemaLocation(catalog_name=CATALOGO, schema_name=SCHEMA),
+            experiment_id=exp_id,
+        )
+        mlflow.set_experiment(experiment_id=exp_id)
+        print(f"✅ UC trace storage habilitado no experimento: {exp_nome}")
+    except Exception as e:
+        print(f"Não foi possível habilitar UC trace storage (opcional): {e}")
+        mlflow.set_experiment(EXP_PADRAO)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Gerar o primeiro trace
+# MAGIC Agora sim chamamos o agente — este é o trace que aparece na aba **Traces**.
+
+# COMMAND ----------
 
 req = ResponsesAgentRequest(input=[
     {"role": "user", "content": "O beneficiário BF000001 teve algum sinistro negado? Por quê?"}
@@ -76,45 +143,11 @@ print(resp.output[-1].content)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC Abra a aba **Traces** do experimento (ou o painel lateral do MLflow) e navegue
-# MAGIC pela árvore: `AGENT → LLM → tool calls`. Cada span traz inputs, outputs e latência.
+# MAGIC Abra a aba **Traces** do experimento e navegue pela árvore: `AGENT → LLM → tool
+# MAGIC calls`. Cada span traz inputs, outputs e latência.
 # MAGIC
-# MAGIC ### ℹ️ Sobre o aviso "Tool call metrics require Unity Catalog trace storage"
-# MAGIC A **árvore de traces** (spans, inputs/outputs, latência por passo) já funciona — é o
-# MAGIC que usamos para depurar o agente. O aviso na UI refere-se a **métricas agregadas
-# MAGIC opcionais** que exigem armazenar os traces no Unity Catalog:
-# MAGIC - percentis de latência (p50/p90/p99),
-# MAGIC - uso e estatísticas de tokens,
-# MAGIC - custo por chamada e tendências,
-# MAGIC - métricas de tool call (uso, latência, taxa de erro).
-# MAGIC
-# MAGIC Nada disso é necessário para o workshop — o traço individual já mostra tudo que
-# MAGIC precisamos. Se **quiser** habilitar os dashboards agregados, aponte o experimento
-# MAGIC para uma tabela de traces no UC (célula abaixo, opcional).
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC #### (Opcional) Habilitar UC trace storage
-# MAGIC Cria uma localização de traces governada pelo Unity Catalog no **seu** schema.
-# MAGIC Requer MLflow 3 recente. Se der erro de versão/permite, apenas pule — não é
-# MAGIC necessário para o restante do notebook.
-
-# COMMAND ----------
-
-# Opcional — descomente para ligar o armazenamento de traces no UC e desbloquear os
-# gráficos agregados (percentis, tokens, custo, métricas de tool call).
-# import mlflow
-# try:
-#     mlflow.set_experiment(f"/Users/{_usuario}/workshop_agentes_avaliacao")
-#     mlflow.tracking.MlflowClient().set_experiment_trace_location(
-#         experiment_id=mlflow.get_experiment_by_name(
-#             f"/Users/{_usuario}/workshop_agentes_avaliacao").experiment_id,
-#         location=f"{CATALOGO}.{SCHEMA}.mlflow_traces",
-#     )
-#     print("✅ UC trace storage habilitado — os gráficos agregados aparecerão na UI.")
-# except Exception as e:
-#     print(f"Não foi possível habilitar UC trace storage (opcional, pode ignorar): {e}")
+# MAGIC Se você habilitou o UC trace storage acima, as abas de **métricas agregadas**
+# MAGIC (percentis de latência, tokens, custo, métricas de tool call) também ficam disponíveis.
 
 # COMMAND ----------
 
