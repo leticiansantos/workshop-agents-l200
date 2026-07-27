@@ -55,54 +55,32 @@ print(f"LLM endpoint....: {LLM_ENDPOINT}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Criação de catálogo, schema e volume
+# MAGIC ## 2. Criação de schema e volume
+# MAGIC O **catálogo** `workshop_dev` já existe (compartilhado, provisionado pelo facilitador).
+# MAGIC Cada participante cria apenas o **seu** schema e volume dentro dele.
 
 # COMMAND ----------
 
-spark.sql(f"CREATE CATALOG IF NOT EXISTS {CATALOGO}")
 spark.sql(f"CREATE SCHEMA IF NOT EXISTS {CATALOGO}.{SCHEMA}")
 spark.sql(f"CREATE VOLUME IF NOT EXISTS {CATALOGO}.{SCHEMA}.{VOLUME}")
 
 spark.sql(f"USE CATALOG {CATALOGO}")
 spark.sql(f"USE SCHEMA {SCHEMA}")
 
-print("✅ Catálogo, schema e volume prontos.")
+print("✅ Schema e volume prontos.")
 display(spark.sql(f"SHOW VOLUMES IN {CATALOGO}.{SCHEMA}"))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Bibliotecas
-# MAGIC Instalamos as libs de agentes/avaliação. Após o `pip install`, o Python é reiniciado.
-
-# COMMAND ----------
-
-# MAGIC %pip install -U -qqq \
-# MAGIC   mlflow[databricks] \
-# MAGIC   databricks-agents \
-# MAGIC   databricks-vectorsearch \
-# MAGIC   databricks-sdk \
-# MAGIC   "Faker>=25.0.0"
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 4. Verificação de acesso às Foundation Model APIs
+# MAGIC ## 3. Verificação de acesso às Foundation Model APIs
 # MAGIC Um "ping" no endpoint de LLM para garantir que o workspace consegue servir modelos.
 
 # COMMAND ----------
 
-import re
 from mlflow.deployments import get_deploy_client
 
-# Reobtém parâmetros (o restartPython limpou o estado).
-CATALOGO = dbutils.widgets.get("catalogo")
-_usuario = spark.sql("SELECT current_user()").collect()[0][0]
-USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-SCHEMA = f"agentes_saude_{USER_SLUG}"
-LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
-
+# CATALOGO/SCHEMA/LLM_ENDPOINT já foram definidos na seção 1 (sem restartPython, seguem válidos).
 client = get_deploy_client("databricks")
 resposta = client.predict(
     endpoint=LLM_ENDPOINT,
@@ -118,5 +96,5 @@ print(resposta["choices"][0]["message"]["content"])
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Próximo passo
+# MAGIC ## 4. Próximo passo
 # MAGIC Ambiente pronto. Siga para **`01_dados_sinteticos`** para gerar os dados de saúde.
