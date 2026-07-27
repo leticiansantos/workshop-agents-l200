@@ -207,9 +207,17 @@ print(f"✅ Dataset com {len(eval_dataset.to_df())} registros — veja em Experi
 # MAGIC ## 3. Função a avaliar
 # MAGIC Um wrapper que chama o agente com a pergunta. Assim conseguimos avaliar tanto o
 # MAGIC objeto local quanto o endpoint deployado.
+# MAGIC
+# MAGIC ⚠️ Para que a avaliação **gere um trace por linha** (visível na aba Traces), duas
+# MAGIC coisas precisam estar ativas: o **autolog** na sessão e o `predict_fn` **rastreado**
+# MAGIC com `@mlflow.trace`. Sem isso, o `evaluate` roda mas não registra traces.
 
 # COMMAND ----------
 
+# Ativa o rastreamento na sessão do notebook (não só dentro do módulo do agente).
+mlflow.langchain.autolog()
+
+@mlflow.trace(name="responder")
 def responder(pergunta: str) -> str:
     req = ResponsesAgentRequest(input=[{"role": "user", "content": pergunta}])
     r = AGENT.predict(req)
