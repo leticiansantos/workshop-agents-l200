@@ -73,27 +73,14 @@ mlflow.langchain.autolog()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Definir o experimento — com UC trace storage OPCIONAL
-# MAGIC ⚠️ **Ordem importa**: o UC trace storage só pode ser ligado a um experimento que
-# MAGIC **ainda não tem nenhum trace**. Por isso ligamos AQUI, antes da primeira predição.
-# MAGIC
-# MAGIC Preencha o widget `sql_warehouse_id` para habilitar os dashboards agregados
-# MAGIC (percentis, tokens, custo, métricas de tool call). Se deixar vazio, usamos o
-# MAGIC experimento normal (a árvore de traces funciona do mesmo jeito).
-# MAGIC
-# MAGIC **Requisitos do UC trace storage** (se não atender, deixe o widget vazio):
-# MAGIC `mlflow[databricks] >= 3.9`, preview "OpenTelemetry on Databricks", um SQL Warehouse,
-# MAGIC e região `us-east-1`/`us-west-2`.
+# MAGIC ### Definir o experimento
+# MAGIC ⚠️ **Ambiente compartilhado**: o nome-folha do experimento inclui o `USER_SLUG`, então
+# MAGIC é único mesmo que os notebooks rodem como job/service principal (`current_user()` igual
+# MAGIC para todos) ou que o experimento caia numa pasta compartilhada. Ancoramos na home do
+# MAGIC usuário e caímos para `/Shared` se a home não for gravável.
 
 # COMMAND ----------
 
-dbutils.widgets.text("sql_warehouse_id", "", "SQL Warehouse ID (opcional p/ UC traces)")
-SQL_WAREHOUSE_ID = dbutils.widgets.get("sql_warehouse_id")
-
-# ⚠️ Ambiente compartilhado: o nome-folha do experimento inclui o USER_SLUG. Assim ele é
-# único mesmo que os notebooks rodem como job/service principal (current_user() igual para
-# todos) ou que o experimento seja criado numa pasta compartilhada. Ancoramos na home do
-# usuário quando possível e caímos para uma pasta compartilhada se a home não for gravável.
 EXP_LEAF = f"workshop_agentes_avaliacao_{USER_SLUG}"
 
 def _definir_experimento(nome_folha):
@@ -107,46 +94,8 @@ def _definir_experimento(nome_folha):
             continue
     raise RuntimeError("Não foi possível criar o experimento em nenhum caminho.")
 
-if not SQL_WAREHOUSE_ID:
-    EXP_PADRAO = _definir_experimento(EXP_LEAF)
-    print(f"Sem SQL Warehouse ID — usando experimento normal: {EXP_PADRAO}")
-    print("(a árvore de traces funciona; dashboards agregados ficam desabilitados)")
-else:
-    from mlflow.entities import UCSchemaLocation
-    from mlflow.tracing.enablement import set_experiment_trace_location
-
-    os.environ["MLFLOW_TRACING_SQL_WAREHOUSE_ID"] = SQL_WAREHOUSE_ID
-
-    # O UC storage exige um experimento SEM traces. Nome-folha inclui o USER_SLUG (único);
-    # se já existir com traces, criamos um novo com sufixo incremental.
-    base = f"/Users/{_usuario}/{EXP_LEAF}_uc"
-    exp_nome = base
-    sufixo = 0
-    while True:
-        exp = mlflow.get_experiment_by_name(exp_nome)
-        if exp is None:
-            exp_id = mlflow.create_experiment(exp_nome)   # experimento novo, sem traces
-            break
-        # Já existe: só reutiliza se ainda não tiver traces.
-        tem_traces = len(mlflow.search_traces(experiment_ids=[exp.experiment_id],
-                                              max_results=1, return_type="list")) > 0
-        if not tem_traces:
-            exp_id = exp.experiment_id
-            break
-        sufixo += 1
-        exp_nome = f"{base}_{sufixo}"
-
-    try:
-        set_experiment_trace_location(
-            location=UCSchemaLocation(catalog_name=CATALOGO, schema_name=SCHEMA),
-            experiment_id=exp_id,
-        )
-        mlflow.set_experiment(experiment_id=exp_id)
-        print(f"✅ UC trace storage habilitado no experimento: {exp_nome}")
-    except Exception as e:
-        print(f"Não foi possível habilitar UC trace storage (opcional): {e}")
-        print("Caindo para o experimento normal.")
-        _definir_experimento(EXP_LEAF)
+EXP_ATIVO = _definir_experimento(EXP_LEAF)
+print(f"Experimento ativo: {EXP_ATIVO}")
 
 # COMMAND ----------
 
@@ -166,15 +115,19 @@ print(resp.output[-1].content)
 
 # MAGIC %md
 # MAGIC ### Verificar que o trace foi gravado
-# MAGIC Confirmamos em qual experimento os traces caíram e quantos existem. Se aparecer 0,
-# MAGIC quase sempre é: (a) autolog não ativo antes da predição, ou (b) experimento ativo
-# MAGIC diferente do que você está olhando na UI.
+# MAGIC Confirmamos em qual experimento os traces caíram, quantos existem e o link direto.
 
 # COMMAND ----------
 
+# Os traces são exportados de forma assíncrona — força o flush antes de contar.
+try:
+    mlflow.flush_trace_async_logging()
+except Exception:
+    pass
+
 exp_ativo = mlflow.get_experiment(mlflow.tracking.fluent._get_experiment_id())
 traces = mlflow.search_traces(
-    experiment_ids=[exp_ativo.experiment_id], max_results=10, return_type="list"
+    locations=[exp_ativo.experiment_id], max_results=10, return_type="list"
 )
 print(f"Experimento ativo: {exp_ativo.name}")
 print(f"  experiment_id...: {exp_ativo.experiment_id}")
