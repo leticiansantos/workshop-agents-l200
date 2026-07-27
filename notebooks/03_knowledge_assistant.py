@@ -16,11 +16,11 @@
 # ── Isolamento por usuário (ambiente compartilhado) ────────────────────────────
 import re
 
-dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
+dbutils.widgets.text("catalogo", "workshop_dev", "Catálogo (compartilhado)")
 CATALOGO = dbutils.widgets.get("catalogo")
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-SCHEMA = f"saude_{USER_SLUG}"
+SCHEMA = f"agentes_saude_{USER_SLUG}"
 VOL_PATH = f"/Volumes/{CATALOGO}/{SCHEMA}/documentos"
 
 print(f"Seu volume de documentos: {VOL_PATH}")
@@ -44,7 +44,7 @@ display(dbutils.fs.ls(VOL_PATH))
 # MAGIC    rol de procedimentos do plano de saúde, com base nos manuais e políticas oficiais.
 # MAGIC    ```
 # MAGIC 3. **Fonte de conhecimento**: aponte para o **seu** volume
-# MAGIC    `/Volumes/workshop_agentes/saude_<seu_usuario>/documentos` (ou faça upload dos `.md`).
+# MAGIC    `/Volumes/workshop_dev/agentes_saude_<seu_usuario>/documentos` (ou faça upload dos `.md`).
 # MAGIC 4. Aguarde a indexação (ingestão + embeddings automáticos).
 
 # COMMAND ----------

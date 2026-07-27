@@ -16,12 +16,12 @@
 # ── Isolamento por usuário (ambiente compartilhado) ────────────────────────────
 import re
 
-dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
+dbutils.widgets.text("catalogo", "workshop_dev", "Catálogo (compartilhado)")
 dbutils.widgets.text("agente_endpoint", "", "Endpoint do seu agente")
 CATALOGO = dbutils.widgets.get("catalogo")
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-SCHEMA = f"saude_{USER_SLUG}"
+SCHEMA = f"agentes_saude_{USER_SLUG}"
 AGENTE_ENDPOINT = dbutils.widgets.get("agente_endpoint")
 
 # COMMAND ----------
@@ -47,7 +47,7 @@ _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
 
 CATALOGO = dbutils.widgets.get("catalogo")
-SCHEMA = f"saude_{USER_SLUG}"
+SCHEMA = f"agentes_saude_{USER_SLUG}"
 
 # O agente foi gerado no notebook 04 e gravado num volume persistente do UC — importamos
 # de lá (sobrevive a reinício de cluster, acessível entre sessões).
@@ -343,7 +343,7 @@ resultados.metrics
 
 # Conceder execução da UC Function a um grupo (ajuste o nome do grupo).
 # spark.sql(f"GRANT EXECUTE ON FUNCTION {CATALOGO}.{SCHEMA}.sinistros_do_beneficiario TO `atendimento`")
-print("Lineage e permissões visíveis no Catalog Explorer → workshop_agentes.saude")
+print("Lineage e permissões visíveis no Catalog Explorer → workshop_dev.agentes_saude")
 
 # COMMAND ----------
 

@@ -8,9 +8,9 @@ saúde brasileira.
 Para evitar conflitos entre participantes rodando ao mesmo tempo, **cada pessoa usa um
 schema próprio** derivado do seu login:
 
-- Catálogo (compartilhado): `workshop_agentes`
-- Schema (exclusivo): `saude_<seu_usuario>` — ex.: `saude_ana_souza`
-- Volume: `/Volumes/workshop_agentes/saude_<seu_usuario>/documentos`
+- Catálogo (compartilhado): `workshop_dev`
+- Schema (exclusivo): `agentes_saude_<seu_usuario>` — ex.: `agentes_saude_ana_souza`
+- Volume: `/Volumes/workshop_dev/agentes_saude_<seu_usuario>/documentos`
 
 O slug do usuário é calculado deterministicamente a partir de `current_user()` no início
 de cada notebook. Tabelas, funções, índice de Vector Search, modelo e deploy ficam todos

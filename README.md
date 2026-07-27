@@ -29,16 +29,16 @@ Este workshop foi preparado para rodar num **workspace compartilhado**, com vár
 participantes executando os mesmos notebooks ao mesmo tempo. Para evitar que uns
 sobrescrevam os dados/assets dos outros:
 
-- **Cada participante trabalha em um schema próprio**: `saude_<seu_usuario>`, derivado
+- **Cada participante trabalha em um schema próprio**: `agentes_saude_<seu_usuario>`, derivado
   automaticamente de `current_user()` no início de cada notebook (nada a configurar).
 - Ficam **isolados por pessoa**: schema, tabelas, volume de documentos, UC Functions,
   índice de Vector Search, modelo registrado no UC, endpoint de deploy e experimento MLflow.
 - Ficam **compartilhados** (recursos caros, seguros para multiusuário): o **catálogo**
-  `workshop_agentes` e o **endpoint de Vector Search** `workshop_vs_endpoint`.
+  `workshop_dev` e o **endpoint de Vector Search** `workshop_vs_endpoint`.
 - Os assets de UI (Genie Space, Knowledge Assistant, Multi-Agent Supervisor) devem ser
   criados com **o seu nome no título** — os notebooks imprimem o nome sugerido.
-- O arquivo do agente com código é gerado em `/tmp/workshop_agentes/<seu_usuario>/` com
-  nome de módulo único, evitando colisão no driver compartilhado.
+- O arquivo do agente com código é gerado no volume `/Volumes/workshop_dev/agentes_saude_<seu_usuario>/assets/`
+  com nome de módulo único, evitando colisão no driver compartilhado.
 
 > Resultado: dá para 30 pessoas rodarem `00`→`07` simultaneamente sem pisar umas nas outras.
 

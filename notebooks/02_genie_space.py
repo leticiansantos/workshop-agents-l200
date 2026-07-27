@@ -18,7 +18,7 @@
 # MAGIC ## 1. Criar o Genie Space (UI)
 # MAGIC
 # MAGIC ⚠️ **Ambiente compartilhado**: dê um nome único ao seu Space (inclua seu usuário) e
-# MAGIC aponte para o **seu** schema `workshop_agentes.saude_<seu_usuario>`. Rode a célula
+# MAGIC aponte para o **seu** schema `workshop_dev.agentes_saude_<seu_usuario>`. Rode a célula
 # MAGIC abaixo para descobrir o nome exato do seu schema e o título sugerido.
 # MAGIC
 # MAGIC No menu lateral: **Genie → New** e configure:
@@ -31,11 +31,11 @@
 # COMMAND ----------
 
 import re
-dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
+dbutils.widgets.text("catalogo", "workshop_dev", "Catálogo (compartilhado)")
 CATALOGO = dbutils.widgets.get("catalogo")
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-SCHEMA = f"saude_{USER_SLUG}"
+SCHEMA = f"agentes_saude_{USER_SLUG}"
 print(f"Seu schema para o Genie...: {CATALOGO}.{SCHEMA}")
 print(f"Título sugerido do Space..: Sinistros de Saúde — {USER_SLUG}")
 print("\nTabelas para adicionar:")

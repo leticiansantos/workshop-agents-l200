@@ -18,15 +18,15 @@
 # COMMAND ----------
 
 # ── Isolamento por usuário (ambiente compartilhado) ────────────────────────────
-# Cada participante grava no seu próprio schema saude_<usuario>. Ver notebook 00.
+# Cada participante grava no seu próprio schema agentes_saude_<usuario>. Ver notebook 00.
 import re
 
-dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
+dbutils.widgets.text("catalogo", "workshop_dev", "Catálogo (compartilhado)")
 CATALOGO = dbutils.widgets.get("catalogo")
 
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-SCHEMA = f"saude_{USER_SLUG}"
+SCHEMA = f"agentes_saude_{USER_SLUG}"
 VOLUME = "documentos"
 VOL_PATH = f"/Volumes/{CATALOGO}/{SCHEMA}/{VOLUME}"
 print(f"Gravando em: {CATALOGO}.{SCHEMA}  (usuário: {_usuario})")

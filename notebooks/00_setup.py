@@ -18,7 +18,7 @@
 # MAGIC
 # MAGIC ⚠️ **Ambiente compartilhado.** Para evitar que participantes sobrescrevam os dados,
 # MAGIC funções, índices e deploys uns dos outros, **cada pessoa usa um schema próprio**
-# MAGIC derivado do seu usuário: `saude_<seu_usuario>`.
+# MAGIC derivado do seu usuário: `agentes_saude_<seu_usuario>`.
 # MAGIC
 # MAGIC - **Compartilhado por todos**: o catálogo e o endpoint de Vector Search (recursos
 # MAGIC   caros que suportam multiusuário).
@@ -32,14 +32,14 @@
 
 import re
 
-dbutils.widgets.text("catalogo", "workshop_agentes", "Catálogo (compartilhado)")
+dbutils.widgets.text("catalogo", "workshop_dev", "Catálogo (compartilhado)")
 CATALOGO = dbutils.widgets.get("catalogo")
 
 # Slug determinístico a partir do login (ex.: "ana.souza@empresa.com" -> "ana_souza").
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
 
-SCHEMA = f"saude_{USER_SLUG}"          # schema exclusivo do participante
+SCHEMA = f"agentes_saude_{USER_SLUG}"          # schema exclusivo do participante
 VOLUME = "documentos"
 
 # Endpoint de LLM usado no workshop (Foundation Model API). Compartilhado — só leitura.
@@ -100,7 +100,7 @@ from mlflow.deployments import get_deploy_client
 CATALOGO = dbutils.widgets.get("catalogo")
 _usuario = spark.sql("SELECT current_user()").collect()[0][0]
 USER_SLUG = re.sub(r"[^a-z0-9]+", "_", _usuario.split("@")[0].lower()).strip("_")
-SCHEMA = f"saude_{USER_SLUG}"
+SCHEMA = f"agentes_saude_{USER_SLUG}"
 LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
 
 client = get_deploy_client("databricks")
