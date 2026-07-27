@@ -175,17 +175,25 @@ registros = [
 
 # COMMAND ----------
 
-# Cria (ou recupera) um dataset gerenciado no UC, no SEU schema. Aparece na aba Datasets.
+# Cria (ou recupera) um dataset gerenciado no UC, no SEU schema.
+# IMPORTANTE: passamos experiment_id para VINCULAR o dataset ao experimento ativo —
+# é isso que faz o dataset aparecer na aba Datasets DESSE experimento.
 import mlflow.genai.datasets
 
 DATASET_TABLE = f"{CATALOGO}.{SCHEMA}.eval_dataset_atendimento"
+EXP_ID = mlflow.get_experiment_by_name(EXP_ATIVO).experiment_id
 
+# get_dataset lança se não existir — capturamos APENAS esse caso e criamos.
 try:
     eval_dataset = mlflow.genai.datasets.get_dataset(DATASET_TABLE)
     print(f"Dataset existente recuperado: {DATASET_TABLE}")
-except Exception:
-    eval_dataset = mlflow.genai.datasets.create_dataset(uc_table_name=DATASET_TABLE)
-    print(f"Dataset criado: {DATASET_TABLE}")
+except Exception as e:
+    print(f"Dataset não existe ({type(e).__name__}) — criando...")
+    eval_dataset = mlflow.genai.datasets.create_dataset(
+        uc_table_name=DATASET_TABLE,
+        experiment_id=EXP_ID,   # vincula ao experimento → aparece na aba Datasets
+    )
+    print(f"Dataset criado e vinculado ao experimento {EXP_ID}: {DATASET_TABLE}")
 
 eval_dataset.merge_records(registros)
 print(f"✅ Dataset com {len(eval_dataset.to_df())} registros — veja em Experiment → Datasets.")
