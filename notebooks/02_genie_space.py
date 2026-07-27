@@ -119,6 +119,8 @@ from databricks.sdk import WorkspaceClient
 
 w = WorkspaceClient()
 
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### 🧩 EXERCÍCIO — Consultar o Genie por código
 # MAGIC Complete a função que inicia uma conversa no Genie e extrai a resposta e o SQL gerado.

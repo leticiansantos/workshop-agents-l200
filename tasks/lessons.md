@@ -30,9 +30,14 @@
 - **Versão com exercícios** (pedido do usuário): `notebooks/` tem lacunas `🧩 EXERCÍCIO`
   com prompt sugerido para o **Databricks Assistant** (ícone ✨ da célula); `respostas/`
   guarda o gabarito completo e funcional. Exercícios ficam nos pontos conceitualmente
-  centrais (regras de negócio, UC Function, Genie/KA API, roteador MAS, scorer Guidelines),
-  NÃO na infraestrutura (setup/isolamento/deploy) para não travar a turma. Ao editar a
+  centrais (Genie/KA API, UC Function, roteador MAS, scorer Guidelines), NÃO na
+  infraestrutura (setup/isolamento/deploy) para não travar a turma. Ao editar a
   lógica, atualizar OS DOIS: a lacuna em notebooks/ e o gabarito em respostas/.
+- **Geração de dados NÃO é exercício**: o nb 01 gera dados sintéticos que precisam ser
+  IDÊNTICOS para todos (senão os agentes de cada um veem dados diferentes). O exercício do
+  nb 01 é um **aquecimento consultivo** (SQL exploratório, não altera dados) que tem duplo
+  papel: apresentar o FORMATO dos exercícios (🧩 EXERCÍCIO + prompt → 🧩 TODO) e ensinar o
+  passo a passo de uso do Databricks Assistant (✨). É o primeiro exercício do workshop.
 - **Formato de payload dos endpoints**: Knowledge Assistant, ResponsesAgent e MAS usam
   a chave `"input"` (formato Responses), NÃO `"messages"` (formato chat). Só os endpoints
   de Foundation Model/LLM usam `"messages"`. Ao chamar endpoints de agente, usar `"input"`

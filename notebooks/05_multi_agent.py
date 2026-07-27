@@ -90,6 +90,8 @@ mlflow.langchain.autolog()
 client = get_deploy_client("databricks")
 w = WorkspaceClient()
 
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### 🧩 EXERCÍCIO — Roteador do supervisor
 # MAGIC O supervisor precisa decidir para qual agente enviar a pergunta. Complete o **prompt

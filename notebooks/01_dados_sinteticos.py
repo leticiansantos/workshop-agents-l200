@@ -164,22 +164,6 @@ motivos_negativa = [
     "Limite de utilização excedido",
 ]
 
-# MAGIC %md
-# MAGIC ### 🧩 EXERCÍCIO 1 — Regras de negativa dos sinistros
-# MAGIC Complete a lógica que decide o `status` de cada sinistro. Sem boas regras de negativa,
-# MAGIC os agentes não terão o que analisar/explicar depois.
-# MAGIC
-# MAGIC **Como preencher (use o Databricks Assistant — ícone ✨ no canto da célula):**
-# MAGIC Selecione a célula abaixo, abra o Assistant e peça algo como:
-# MAGIC > "Complete a função `gerar_sinistro`: comece com status 'Aprovado' e motivo None.
-# MAGIC > Sorteie `r = random.random()`. Se o hospital não for credenciado (`h.credenciado`
-# MAGIC > é False) e `r < 0.9`, marque status 'Negado' com motivo 'Hospital não credenciado'.
-# MAGIC > Senão, se `r < 0.12`, status 'Negado' com um motivo aleatório de `motivos_negativa`.
-# MAGIC > Senão, se `r < 0.20`, status 'Em análise' com motivo None. `valor_aprovado` deve
-# MAGIC > ser `valor_solicitado` quando aprovado, senão 0.0."
-# MAGIC
-# MAGIC Confira o resultado na pasta `respostas/` se travar.
-
 # COMMAND ----------
 
 def gerar_sinistro(i):
@@ -189,13 +173,18 @@ def gerar_sinistro(i):
     data_evento = fake.date_between(start_date="-2y", end_date="today")
     valor_solicitado = round(float(p.valor_referencia) * random.uniform(0.8, 1.4), 2)
 
-    # 🧩 TODO: complete as regras de negativa e o cálculo de valor_aprovado.
-    # Variáveis disponíveis: h.credenciado (bool), motivos_negativa (lista), valor_solicitado.
+    # Regras sintéticas de negativa.
     status = "Aprovado"
     motivo = None
-    # ... sua lógica aqui ...
-    valor_aprovado = None  # 🧩 TODO: valor_solicitado se aprovado, senão 0.0
+    r = random.random()
+    if not h.credenciado and r < 0.9:
+        status, motivo = "Negado", "Hospital não credenciado"
+    elif r < 0.12:
+        status, motivo = "Negado", random.choice(motivos_negativa)
+    elif r < 0.20:
+        status, motivo = "Em análise", None
 
+    valor_aprovado = valor_solicitado if status == "Aprovado" else 0.0
     return Row(
         sinistro_id=f"SN{i:07d}",
         beneficiario_id=b,
@@ -401,3 +390,51 @@ display(dbutils.fs.ls(VOL_PATH))
 
 for t in ["beneficiarios", "planos", "hospitais", "procedimentos", "sinistros"]:
     print(f"{t:15s}: {spark.table(t).count():>7,} linhas")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 7. 🧩 EXERCÍCIO — seu primeiro exercício (aquecimento)
+# MAGIC
+# MAGIC Este notebook **gera** os dados (idênticos para todos os participantes) — por isso não
+# MAGIC tem lacunas de geração. Mas ele traz o **primeiro exercício** do workshop, com dois
+# MAGIC objetivos:
+# MAGIC
+# MAGIC 1. **Apresentar o formato** que se repete nos próximos notebooks: um bloco
+# MAGIC    **`🧩 EXERCÍCIO`** com a tarefa + um **prompt sugerido**, seguido de uma célula com
+# MAGIC    **`🧩 TODO`** onde você escreve o código.
+# MAGIC 2. **Ensinar a usar o Databricks Assistant** (a IA de código do notebook) para preencher
+# MAGIC    esse código — que é como você vai resolver os exercícios seguintes.
+# MAGIC
+# MAGIC ### Como usar o Databricks Assistant (✨) — passo a passo
+# MAGIC 1. Clique na célula de código logo abaixo (a com `🧩 TODO`).
+# MAGIC 2. Passe o mouse no canto superior direito da célula e clique no ícone **✨** (Assistant),
+# MAGIC    ou pressione a tecla de atalho do Assistant.
+# MAGIC 3. **Cole o prompt sugerido** abaixo no campo do Assistant e envie.
+# MAGIC 4. Revise o código gerado, **aceite** e **rode** a célula (Shift+Enter).
+# MAGIC 5. Travou? A solução está no notebook correspondente na pasta `respostas/`.
+# MAGIC
+# MAGIC ### A tarefa
+# MAGIC Explore os dados com SQL — o mesmo tipo de pergunta que o Genie (notebook 02) vai
+# MAGIC responder em linguagem natural. Retorne, **por plano** (`planos.nome_plano`), o total
+# MAGIC de sinistros, quantos foram negados e a **taxa de negativa (%)**, da maior para a menor.
+# MAGIC
+# MAGIC ### Prompt sugerido para o Assistant (copie e cole no ✨)
+# MAGIC > "Escreva uma query Spark SQL com `spark.sql` que junte `sinistros` → `beneficiarios`
+# MAGIC > → `planos`. Agrupe por `planos.nome_plano` e retorne: total de sinistros, total de
+# MAGIC > negados (status = 'Negado') e a taxa de negativa em porcentagem (negados/total*100,
+# MAGIC > arredondada a 1 casa). Ordene pela taxa de negativa decrescente e mostre com display()."
+
+# COMMAND ----------
+
+# 🧩 TODO: use o Assistant (✨) e o prompt acima para escrever a consulta aqui.
+# df = spark.sql(""" ... """)
+# display(df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **Desafios extras** (opcionais, use o Assistant): responda também via SQL —
+# MAGIC - Quais os **5 procedimentos** com maior valor total aprovado?
+# MAGIC - Qual a distribuição de sinistros por `status` (Aprovado / Negado / Em análise)?
+# MAGIC - Quais os **motivos de negativa** mais comuns?

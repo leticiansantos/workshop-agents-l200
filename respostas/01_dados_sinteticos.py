@@ -388,3 +388,55 @@ display(dbutils.fs.ls(VOL_PATH))
 
 for t in ["beneficiarios", "planos", "hospitais", "procedimentos", "sinistros"]:
     print(f"{t:15s}: {spark.table(t).count():>7,} linhas")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 7. Conhecendo os dados (consulta analítica) — SOLUÇÃO
+# MAGIC Taxa de negativa por plano de saúde.
+
+# COMMAND ----------
+
+df = spark.sql("""
+    SELECT p.nome_plano,
+           COUNT(*) AS total_sinistros,
+           SUM(CASE WHEN s.status = 'Negado' THEN 1 ELSE 0 END) AS negados,
+           ROUND(100.0 * SUM(CASE WHEN s.status = 'Negado' THEN 1 ELSE 0 END) / COUNT(*), 1)
+               AS taxa_negativa_pct
+    FROM sinistros s
+    JOIN beneficiarios b ON s.beneficiario_id = b.beneficiario_id
+    JOIN planos p ON b.plano_id = p.plano_id
+    GROUP BY p.nome_plano
+    ORDER BY taxa_negativa_pct DESC
+""")
+display(df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Desafios extras — SOLUÇÃO
+
+# COMMAND ----------
+
+# Top 5 procedimentos por valor total aprovado.
+display(spark.sql("""
+    SELECT pr.descricao, ROUND(SUM(s.valor_aprovado), 2) AS valor_aprovado_total
+    FROM sinistros s
+    JOIN procedimentos pr ON s.procedimento_id = pr.procedimento_id
+    GROUP BY pr.descricao
+    ORDER BY valor_aprovado_total DESC
+    LIMIT 5
+"""))
+
+# Distribuição por status.
+display(spark.sql("""
+    SELECT status, COUNT(*) AS qtd
+    FROM sinistros GROUP BY status ORDER BY qtd DESC
+"""))
+
+# Motivos de negativa mais comuns.
+display(spark.sql("""
+    SELECT motivo_negativa, COUNT(*) AS qtd
+    FROM sinistros WHERE status = 'Negado'
+    GROUP BY motivo_negativa ORDER BY qtd DESC
+"""))

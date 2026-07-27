@@ -132,7 +132,7 @@ Onde está cada exercício:
 
 | Notebook | Exercício |
 |----------|-----------|
-| `01` | Regras de negativa dos sinistros (lógica de negócio) |
+| `01` | Consulta analítica sobre os dados (SQL exploratório — não altera a geração) |
 | `02` | Consultar o Genie por código (Conversation API) |
 | `03` | Consultar o Knowledge Assistant por API (payload `input`) |
 | `04` | Criar a UC Function `carencia_procedimento` (tool do agente) |
